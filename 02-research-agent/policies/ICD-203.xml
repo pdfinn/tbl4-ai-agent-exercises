@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<standard id="ICD-203" number="203" title="Analytic Standards"
+          date="2023-06-12" classification="UNCLASSIFIED">
+
+  <summary>
+    Establishes the five core Analytic Standards and nine Analytic Tradecraft
+    Standards that govern the production and evaluation of all IC analytic
+    products. Every analytic product shall be consistent with these standards.
+  </summary>
+
+  <core-standards>
+
+    <standard id="objective" name="Objective">
+      Analysts must perform their functions with objectivity and with awareness
+      of their own assumptions and reasoning. Employ reasoning techniques that
+      reveal and mitigate bias. Consider alternative perspectives and contrary
+      information. Do not be unduly constrained by previous judgments when new
+      developments indicate a modification is necessary.
+    </standard>
+
+    <standard id="independent-of-political-consideration"
+              name="Independent of political consideration">
+      Analytic assessments must not be distorted by, nor shaped for, advocacy
+      of a particular audience, agenda, or policy viewpoint. Analytic judgments
+      must not be influenced by preference for a particular policy.
+    </standard>
+
+    <standard id="timely" name="Timely">
+      Analysis must be disseminated in time to be actionable by customers.
+      Remain aware of events of intelligence interest, customer activities, and
+      intelligence priorities.
+    </standard>
+
+    <standard id="based-on-all-available-sources"
+              name="Based on all available sources of intelligence information">
+      Analysis should be informed by all relevant information available.
+      Identify and address critical information gaps and work with collection
+      activities to develop access and collection strategies.
+    </standard>
+
+    <standard id="implements-tradecraft-standards"
+              name="Implements and exhibits Analytic Tradecraft Standards">
+      Analytic products must implement the nine Analytic Tradecraft Standards
+      below.
+    </standard>
+
+  </core-standards>
+
+  <tradecraft-standards>
+
+    <standard id="sources-quality" number="1"
+              name="Properly describes quality and credibility of underlying sources, data, and methodologies">
+      Identify underlying sources and methodologies upon which judgments are
+      based. Use source descriptors per ICD 206 to describe factors affecting
+      source quality and credibility: accuracy and completeness, possible
+      denial and deception, age and currency, technical elements of
+      collection, source access, validation, motivation, possible bias, and
+      expertise. Source summary statements are strongly encouraged.
+      <cross-reference refs="ICD-206"/>
+    </standard>
+
+    <standard id="expresses-uncertainty" number="2"
+              name="Properly expresses and explains uncertainties associated with major analytic judgments">
+      Indicate and explain the basis for uncertainties associated with major
+      judgments: the likelihood of an event and the analyst's confidence in
+      the basis for that judgment. Note causes of uncertainty (type, currency,
+      and amount of information; knowledge gaps; the nature of the issue) and
+      explain how they affect analysis. Identify indicators that would alter
+      the level of uncertainty.
+
+      <rule id="one-scale">
+        When expressing likelihood or probability, use exactly one of the two
+        term-sets below. Do not mix terms from different rows without a
+        disclaimer noting they refer to the same probability.
+      </rule>
+
+      <rule id="no-mix-likelihood-with-confidence">
+        Do not combine a confidence level ("high confidence") with a degree
+        of likelihood in the same sentence.
+      </rule>
+
+      <probability-scale>
+        <point range="01-05%"
+               likelihood="almost no chance"
+               probability-alt="remote"/>
+        <point range="05-20%"
+               likelihood="very unlikely"
+               probability-alt="highly improbable (improbably)"/>
+        <point range="20-45%"
+               likelihood="unlikely"
+               probability-alt="improbable (improbably)"/>
+        <point range="45-55%"
+               likelihood="roughly even chance"
+               probability-alt="roughly even odds"/>
+        <point range="55-80%"
+               likelihood="likely"
+               probability-alt="probable (probably)"/>
+        <point range="80-95%"
+               likelihood="very likely"
+               probability-alt="highly probable"/>
+        <point range="95-99%"
+               likelihood="almost certain(ly)"
+               probability-alt="nearly certain"/>
+      </probability-scale>
+    </standard>
+
+    <standard id="distinguishes-info-from-judgment" number="3"
+              name="Properly distinguishes between underlying intelligence information and analysts' assumptions and judgments">
+      Clearly separate statements conveying underlying intelligence information
+      from statements conveying assumptions or judgments. State assumptions
+      explicitly when they serve as the linchpin of an argument or bridge
+      information gaps. Explain the implications for judgments if assumptions
+      prove incorrect. Identify indicators that, if detected, would alter
+      judgments.
+      <definition term="assumption">A supposition used to frame or support an argument.</definition>
+      <definition term="judgment">A conclusion based on underlying intelligence information, analysis, and assumptions.</definition>
+    </standard>
+
+    <standard id="analysis-of-alternatives" number="4"
+              name="Incorporates analysis of alternatives">
+      Systematically evaluate differing hypotheses to explain events, explore
+      near-term outcomes, and imagine possible futures. Identify and assess
+      plausible alternative hypotheses --- particularly when judgments contend
+      with significant uncertainty or when low-probability events could
+      produce high-impact results. Address associated assumptions, likelihood,
+      and implications. Identify indicators that would affect the likelihood
+      of alternatives.
+    </standard>
+
+    <standard id="customer-relevance" number="5"
+              name="Demonstrates customer relevance and addresses implications">
+      Provide information and insight on issues relevant to customers. Address
+      implications: prospects, context, threats, or factors affecting
+      opportunities for action.
+    </standard>
+
+    <standard id="clear-argumentation" number="6"
+              name="Uses clear and logical argumentation">
+      Present a clear main analytic message up front. A multi-judgment product
+      must have an overall message drawn from those judgments. Support all
+      judgments with relevant intelligence and coherent reasoning. Language
+      and syntax should convey meaning unambiguously. Be internally
+      consistent and acknowledge significant supporting and contrary
+      information.
+    </standard>
+
+    <standard id="change-or-consistency" number="7"
+              name="Explains change to or consistency of analytic judgments">
+      State how major judgments are consistent with, differ from, or represent
+      initial coverage relative to previously published analysis. Avoid
+      boilerplate; make clear how new information or reasoning led to the
+      current judgments. Recurrent products should note any changes; when
+      there are no changes, they need not confirm consistency. Significant
+      differences between IC elements should be brought to customers'
+      attention.
+    </standard>
+
+    <standard id="accurate-judgments" number="8"
+              name="Makes accurate judgments and assessments">
+      Apply expertise and logic to make the most accurate judgments possible,
+      based on available information and known gaps. Do not avoid difficult
+      judgments to minimise the risk of being wrong. Express judgments as
+      clearly and precisely as possible, addressing likelihood, timing, and
+      nature of the outcome.
+    </standard>
+
+    <standard id="visual-information" number="9"
+              name="Incorporates effective visual information where appropriate">
+      Use visuals to clarify an analytic message and to complement or enhance
+      the presentation of data and analysis, particularly for spatial or
+      temporal relationships. Visuals must be clear and pertinent; analytic
+      content in visuals must adhere to other tradecraft standards.
+    </standard>
+
+  </tradecraft-standards>
+
+</standard>

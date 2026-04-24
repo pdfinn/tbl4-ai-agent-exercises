@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<standard id="ICD-206" number="206" title="Sourcing Requirements for Disseminated Analytic Products"
+          date="2015-01-22" classification="UNCLASSIFIED">
+
+  <summary>
+    Every covered analytic product shall contain sourcing information so
+    readers can assess the quality and credibility of sources and locate the
+    originals. Sourcing is presented through four mechanisms: Source Reference
+    Citations, Appended Reference Citations, Source Descriptors, and Source
+    Summary Statements. Analysts should combine these mechanisms to optimise
+    clarity.
+  </summary>
+
+  <citation-mechanisms>
+
+    <mechanism id="src" name="Source Reference Citation (SRC)" required="always">
+      <description>
+        Sequentially numbered endnotes that correlate to superscript numbers
+        in the body of the analytic product.
+      </description>
+
+      <generated-when>
+        A source is directly cited in the product text, or a specific aspect of
+        analysis (judgment, assessment, estimate, alternative hypothesis, or
+        confidence level) depends on a source.
+      </generated-when>
+
+      <rules>
+        <rule id="originality">
+          Reference the most original source that presents the relevant
+          information in a form appropriate for analysis.
+        </rule>
+        <rule id="relevance">
+          The relevance of a source should be apparent if a reader consults it
+          directly; otherwise the product text must explain the source's
+          pertinence.
+        </rule>
+        <rule id="exclusivity">
+          Do not use an SRC for information that only meets the criteria for an
+          Appended Reference Citation and is not directly cited in the text.
+        </rule>
+      </rules>
+
+      <elements>
+        <element>portion marking presenting the classification</element>
+        <element>identification of the information originator, author, producer, or owner</element>
+        <element>an unambiguous source identifier enabling efficient location and retrieval</element>
+        <element>a title (with volume/issue number if applicable, and title classification if included)</element>
+        <element>date of issuance, publication, or posting (or date of online access if unknown)</element>
+        <element>page number, if applicable</element>
+        <element>classification of the extracted information</element>
+        <element>overall classification of the source document</element>
+        <element optional="true">a source descriptor (optional if included in the main body; if different, the portion marking must still be included)</element>
+      </elements>
+    </mechanism>
+
+    <mechanism id="arc" name="Appended Reference Citation (ARC)" required="optional">
+      <description>
+        For information that relates to analysis in a supplemental or
+        complementary way but does not expressly affect or support a specific
+        aspect or outcome of analysis.
+      </description>
+      <rules>
+        <rule>Do not include ARCs solely to delineate the overall scope of analytic inquiry.</rule>
+        <rule>If included, list ARCs separately from and after SRCs.</rule>
+      </rules>
+      <elements>
+        <element>portion marking presenting the classification</element>
+        <element>source identifying, labelling, or tagging information (if the reference is accessible)</element>
+        <element>a succinct explanation for its inclusion</element>
+      </elements>
+    </mechanism>
+
+    <mechanism id="source-descriptor" name="Source Descriptor" required="conditional">
+      <description>
+        A brief narrative about factors affecting the quality or credibility of
+        a single source (accuracy, completeness, potential bias, relevance,
+        etc.). It should appear in the main body; if not, it shall appear in
+        the SRC. Use a source descriptor to describe qualitative factors
+        germane to specific judgments, or when the time of the pertinent
+        information differs significantly from the time of publication.
+      </description>
+      <rules>
+        <rule>For intelligence-based or diplomatic sources, derive the descriptor from source documents; indicate any substantial changes and the rationale.</rule>
+        <rule>Analysts may devise descriptors for publicly available information not obtained from an IC-produced open-source report.</rule>
+        <rule>For a directly-cited source, the descriptor should also appear in the text, clearly associated with the source.</rule>
+      </rules>
+    </mechanism>
+
+    <mechanism id="source-summary-statement" name="Source Summary Statement" required="encouraged">
+      <description>
+        A holistic assessment of the sourcing that supports the product as a
+        whole. Importance increases with product complexity, source complexity,
+        or the number of sources cited.
+      </description>
+      <coverage>
+        <item>Strengths and weaknesses of the source base</item>
+        <item>Which sources are most critical to key judgments</item>
+        <item>Sources that are corroborative or conflicting</item>
+        <item>Any specific subject-matter expertise utilised</item>
+      </coverage>
+    </mechanism>
+
+  </citation-mechanisms>
+
+  <retention>
+    <rule id="dynamic-or-ephemeral">
+      For sources that are dynamic (e.g. Internet posting), ephemeral (e.g.
+      analyst phone conversation), or not subject to systematic storage,
+      preserve a record of the source for at least one year.
+    </rule>
+    <rule id="time-horizon">
+      For products with a specified time horizon, retain source information
+      for the time horizon or five years, whichever is shorter.
+    </rule>
+    <rule id="record-copy">
+      Retain the covered analytic product, with all sourcing information, as a
+      document of record, along with any downgraded, sanitised, or tearline
+      versions.
+    </rule>
+  </retention>
+
+  <glossary>
+    <definition term="Covered Analytic Product">
+      A subset of disseminated analytic products, designated by IC elements,
+      that fall under the authority of ICD 206.
+    </definition>
+    <definition term="Disseminated Analytic Product">
+      Any intelligence product (assessment, study, estimate, compilation,
+      database, graphic, or interactive publication) created by the analytic
+      component of an IC element, validated by that element, and disseminated
+      to consumers outside the element.
+    </definition>
+    <definition term="Source">
+      An originator or discrete parcel of data or information that contributes
+      to, affects, or is used to evaluate intelligence analysis. A source can
+      be a person, document, quotation, data record, database, tweet, email,
+      book, web page, etc.
+    </definition>
+    <definition term="Source Reference Citation (SRC)">
+      A specified set of factual information elements about a source,
+      presented in uniform format in an endnote, enabling readers to locate,
+      retrieve, and assess the source.
+    </definition>
+    <definition term="Appended Reference Citation (ARC)">
+      Descriptive elements about information that relates to analysis in a
+      supplemental way but does not expressly affect or support a specific
+      outcome of analysis.
+    </definition>
+    <definition term="Source Descriptor">
+      A brief narrative about factors affecting a single source's quality or
+      credibility, distinct from the information elements in an SRC.
+    </definition>
+    <definition term="Source Summary Statement">
+      An explanation of quality, credibility, or validity factors pertaining
+      to the entire set of sources on which a product is based.
+    </definition>
+    <definition term="Sourcing Information">
+      The combined set of SRCs, ARCs, source descriptors, and source summary
+      statements presented in a covered analytic product.
+    </definition>
+  </glossary>
+
+</standard>

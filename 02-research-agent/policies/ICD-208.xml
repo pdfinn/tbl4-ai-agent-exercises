@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<standard id="ICD-208" number="208" title="Maximising the Utility of Analytic Products"
+          date="2017-01-09" classification="UNCLASSIFIED">
+
+  <summary>
+    IC elements shall produce analytic products that customers can easily
+    discover, access, use, and disseminate. Guidance is organised into five
+    principles, listed here in priority order from highest to lowest.
+  </summary>
+
+  <principles ordered="by-priority">
+
+    <principle rank="1" id="know-your-customers" name="Know Your Customers">
+      Ensure analysts understand the customer's operating environment ---
+      required information, timeliness, classification limits, and optimal
+      methods for discovery and dissemination. Determine before publication
+      whether the product targets a specific customer or a general audience.
+    </principle>
+
+    <principle rank="2" id="meet-analytic-standards" name="Meet Analytic Standards">
+      Analytic products must give customers insight into source quality and
+      credibility, characterise the uncertainty of judgments, and include
+      context to aid understanding. All products shall adhere to the standards
+      of analytic tradecraft in ICD 203.
+      <cross-reference refs="ICD-203"/>
+    </principle>
+
+    <principle rank="3" id="produce-for-tailored-reuse" name="Produce for Tailored Re-Use">
+      Create products for timely dissemination to US customers (federal,
+      state, local, tribal) and, where permitted, partners (Five Eyes, NATO).
+      When similar credible information is reported at multiple classification
+      levels, use the lowest level to facilitate re-use.
+      <details>
+        <detail id="tearlines">
+          Produce tearlines at the lowest classification level that protects
+          sensitive data, sources, methods, and activities (per ICD 209).
+        </detail>
+        <detail id="sourcing">
+          All analytic products must employ proper sourcing in line with ICD
+          206, enabling readers to locate and retrieve sources per ICD 501
+          while avoiding exhaustive listings.
+          <cross-reference refs="ICD-206"/>
+        </detail>
+        <detail id="alternate-versions">
+          Use alternate versions, portion marking, sanitised text, metadata
+          tagging, and tearlines to facilitate tailored re-use. Sanitised
+          products must remain congruent with their higher-classified versions
+          in facts, judgments, confidence levels, and probabilistic language.
+        </detail>
+      </details>
+    </principle>
+
+    <principle rank="4" id="discoverable-accessible"
+               name="Make Analytic Products Discoverable and Accessible">
+      Ensure that customers with proper clearances and approved mission need
+      can discover and access analytic products per ICD 501. At minimum,
+      disseminate products electronically to the Library of National
+      Intelligence or its successor systems.
+    </principle>
+
+    <principle rank="5" id="demonstrate-transparency" name="Demonstrate Transparency">
+      Adhere to the Principles of Intelligence Transparency --- enhancing
+      public understanding of intelligence activities while protecting
+      sensitive sources and methods.
+    </principle>
+
+  </principles>
+
+</standard>

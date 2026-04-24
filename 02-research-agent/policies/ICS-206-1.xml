@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<standard id="ICS-206-1" number="206-01"
+          title="Citation and Reference for Publicly Available Information, Commercially Available Information, and Open Source Intelligence"
+          date="2024-12-02" classification="UNCLASSIFIED">
+
+  <summary>
+    Extends ICD 206 with citation conventions specific to Publicly Available
+    Information (PAI), Commercially Available Information (CAI), Open Source
+    Intelligence (OSINT), and AI-generated content. Governs how these source
+    types appear in disseminated and covered analytic products.
+  </summary>
+
+  <src-conventions>
+    <rule id="pipe-separator">
+      Separate SRC metadata fields with a pipe character (`|`).
+    </rule>
+    <rule id="descriptor-placement">
+      Place the source descriptor in the last piped section. Use commas to
+      separate concepts within the descriptor.
+    </rule>
+    <rule id="default-descriptive">
+      Default to descriptive SRCs that support discovery and reproducibility.
+      Generic SRCs are the exception, used only when there are evidence-based
+      security concerns (e.g. risk of behaviour change or diminished source
+      access).
+    </rule>
+  </src-conventions>
+
+  <body-elements>
+
+    <element id="osint-analysis-producer">
+      <description>
+        The internal IC entity that created or wrote the analysis --- which
+        may be distinct from the entity that collected the data.
+      </description>
+      <convention>
+        Use the "OSINT Analysis by [element]" tagline when the content
+        represents the element's coordinated analytic position ("we assess",
+        "OSINT reveals", thesis-driven argumentation) --- not for data
+        gathering, translation, repackaging, or curation alone.
+      </convention>
+      <example>OSINT Analysis by CIA/A</example>
+    </element>
+
+    <element id="external-author">
+      <description>
+        External author of the source content, distinct from internal IC
+        authorship. If the author is a US Person, follow applicable masking
+        rules and IC element guidelines.
+      </description>
+    </element>
+
+    <element id="data-host">
+      <description>
+        URL of the source, collection tool used, third-party data or analytics
+        service provider, or a placeholder number (coordinated with the IC
+        OSINT Executive) when sensitivity prevents direct citation.
+      </description>
+      <example>PAI/CAI Program, ODNI Number 234647</example>
+    </element>
+
+  </body-elements>
+
+  <source-descriptor-elements>
+
+    <element id="credibility-and-bias" required="true">
+      Brief description of the source's credibility, biases, and quality of
+      information.
+      <example>
+        PlatformXYZ, hosted by think tank Y, has a mission statement to
+        increase public spending on X. Guest authors produce fact-based,
+        original research but often from Y's policy position.
+      </example>
+    </element>
+
+    <element id="collector">
+      <description>
+        The entity that researched, gathered, or collected the data.
+      </description>
+      <example>Collected by NGA/X</example>
+    </element>
+
+    <element id="commercial-database">
+      <description>
+        Name of the database, relevant technical or content information, and
+        whether a login was required.
+      </description>
+      <example>
+        Article retrieved from Database_Company commercial database,
+        specialises in climate change content, login required.
+      </example>
+    </element>
+
+    <element id="commercial-tool">
+      <description>
+        Name the tool or data service used. Must be cited if it provided
+        judgment calls, recommendations, inferences, or predictions ("value
+        added analytics") --- especially when AI/ML/CV-assisted. Traditional
+        programming functions (search, summation, keyword alerting,
+        spreadsheet-like functions) do not require notation.
+      </description>
+    </element>
+
+  </source-descriptor-elements>
+
+  <ai-citation>
+
+    <rule id="cite-when-value-added">
+      Cite any AI system used for collection or analysis whenever it
+      contributes judgment, inference, or value-added analytics to the
+      product.
+    </rule>
+
+    <citation-type id="classification-model">
+      <description>
+        For AI systems that classify or detect (e.g. computer vision finding
+        construction equipment in imagery).
+      </description>
+      <required-elements>
+        <element>system type</element>
+        <element>model name</element>
+        <element>brief non-technical explanation of what the system does</element>
+        <element>accuracy: precision and recall rates (percent)</element>
+        <element>relevant system settings</element>
+        <element>relevant training-data information</element>
+        <element>software version number</element>
+        <element>GitHub or software code link (if open source)</element>
+        <element>date of use</element>
+      </required-elements>
+      <example>
+        Computer Vision System, Look At Those Cars (LATC), finds construction
+        equipment in commercial electro-optical imagery, Model Precision 90%
+        --- Recall 75%, trained on 2,000 labelled commercial electro-optical
+        images from March 2019 to April 2024, Version 2.1,
+        www.github.com/latc, system used for project to identify cranes 1--5
+        July 2024.
+      </example>
+    </citation-type>
+
+    <citation-type id="generative-ai">
+      <description>
+        For generative AI outputs (stochastic --- the same prompt may produce
+        different outputs). Documenting the base elements is essential for
+        reproducibility.
+      </description>
+      <required-elements>
+        <element>platform or model used</element>
+        <element>full prompt text</element>
+      </required-elements>
+      <caveat>
+        Outputs are stochastic. The same prompt may produce different outputs
+        on different runs.
+      </caveat>
+      <example>
+        TalkXYZ platform or model used, prompt: "Generate a report on the city
+        of Beijing. Tell me about the history of the city. Write this in a
+        formal tone. Include citations from National Geographic."
+      </example>
+    </citation-type>
+
+  </ai-citation>
+
+  <retention>
+    <rule id="dynamic-pai-cai">
+      If an externally-created PAI or CAI source is dynamic and important to
+      the bottom-line message, preserve a record (e.g. screen print) for at
+      least one year. Follow the IC element's NARA-approved Records Control
+      Schedule; the RCS prevails in conflict.
+    </rule>
+    <rule id="time-horizon">
+      For long-horizon products (e.g. National Intelligence Estimates), retain
+      PAI or CAI source citations for the product's time horizon or five
+      years, whichever is shorter.
+    </rule>
+  </retention>
+
+  <glossary>
+    <definition term="Artificial Intelligence (AI)">
+      A machine-based system that can, for a given set of human-defined
+      objectives, make predictions, recommendations, or decisions influencing
+      real or virtual environments (per 15 U.S.C. § 9401(3)).
+    </definition>
+    <definition term="Commercially Available Information (CAI)">
+      Data or information customarily sold, leased, or licensed to the general
+      public or to non-governmental entities --- including data provided
+      voluntarily to the government by corporate entities.
+    </definition>
+    <definition term="Publicly Available Information (PAI)">
+      Information that has been published or broadcast for public consumption,
+      is available on request to the public, is accessible online, or could be
+      seen or heard by any casual observer.
+    </definition>
+    <definition term="Open Source Intelligence (OSINT)">
+      Intelligence derived exclusively from publicly or commercially available
+      information that addresses specific intelligence priorities,
+      requirements, or gaps.
+    </definition>
+    <definition term="Stand-Alone OSINT Analytic Product">
+      An analytic product representing an IC element's coordinated analytic
+      position, derived solely from PAI, CAI, and/or OSINT and disseminated
+      broadly.
+    </definition>
+    <definition term="Stand-Alone OSINT Product">
+      An OSINT product that provides "fact of" observations and informational
+      content without analysis or a coordinated analytic position.
+    </definition>
+    <definition term="Direct Link Citation">
+      The practice of hyperlinking words and phrases to the underlying online
+      source. Does not negate the need for source metadata; direct links and
+      endnotes can co-exist.
+    </definition>
+    <definition term="Source Validation of PAI and CAI">
+      The process of identifying a PAI or CAI source's reporting significance
+      --- focused on determining accuracy and reliability.
+    </definition>
+    <definition term="Unevaluated PAI or CAI">
+      PAI or CAI that has been collected but not yet determined to meet the
+      criteria for IC-element retention.
+    </definition>
+  </glossary>
+
+</standard>
