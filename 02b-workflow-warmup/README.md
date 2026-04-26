@@ -36,11 +36,11 @@ Total: ~45 minutes.
 
 1. **(2 min) Frame the warm-up.** "Before we hit the patterns, we're going to drill the primitives. Same idea as scales before the symphony."
 
-2. **(15 min) Stage 1.** Students import `stage-1-expressions.workflow.json`, run it, click on each node and read the output panel. Optionally have them change the input sentence (e.g. "Your code is broken." or "I disagree completely.") and re-run. Walk the room — this is where you catch students who don't yet read the output panel.
+2. **(15 min) Stage 1.** Students import `02b-stage-1-expressions.workflow.json`, run it, click on each node and read the output panel. Optionally have them change the input sentence (e.g. "Your code is broken." or "I disagree completely.") and re-run. Walk the room — this is where you catch students who don't yet read the output panel.
 
-3. **(15 min) Stage 2.** Import `stage-2-if-node.workflow.json`, run it once with `mood: happy` (default), then change `mood` in *Set Mood* to anything else and re-run. Both branches should fire across the two runs.
+3. **(15 min) Stage 2.** Import `02b-stage-2-if-node.workflow.json`, run it once with `mood: happy` (default), then change `mood` in *Set Mood* to anything else and re-run. Both branches should fire across the two runs.
 
-4. **(15 min) Stage 3.** Import `stage-3-llm-classifier.workflow.json`. Run it on the default sentence, then on a deliberately sad one ("My team lost again"), then on something ambiguous ("It's Monday"). Watch the classifier and the routing.
+4. **(15 min) Stage 3.** Import `02b-stage-3-llm-classifier.workflow.json`. Run it on the default sentence, then on a deliberately sad one ("My team lost again"), then on something ambiguous ("It's Monday"). Watch the classifier and the routing.
 
 5. **(5 min) Bridge to Ex 03.** "You've now built Ex 04 in miniature. The patterns are this shape, scaled up. Ex 03 adds a quality gate. Ex 04 swaps the IF for a Switch and adds a third branch. Ex 05 adds parallel branches. Ex 06 adds an evaluator. Same primitives, new compositions."
 
@@ -67,9 +67,9 @@ If they can do all five, they're ready for Ex 03.
 
 ## Files
 
-- `stage-1-expressions.workflow.json` — start here.
-- `stage-2-if-node.workflow.json` — second.
-- `stage-3-llm-classifier.workflow.json` — third; this completes the primer.
+- `02b-stage-1-expressions.workflow.json` — start here.
+- `02b-stage-2-if-node.workflow.json` — second.
+- `02b-stage-3-llm-classifier.workflow.json` — third; this completes the primer.
 
 ## What this is NOT
 

@@ -1,6 +1,6 @@
 # Exercise 04 — Pattern: Routing
 
-*Instructor-facing overview. Student-facing instructions are in `a-blank.md` and `b-half-built.md`.*
+*Instructor-facing overview. Student-facing instructions are in `04-a-blank.md` and `04-b-half-built.md`.*
 
 ## Learning goal
 
@@ -19,9 +19,9 @@ Customer support triage. The classifier reads a message and chooses BILLING / TE
 
 | File | Use |
 |---|---|
-| `a-blank.workflow.json` | Manual Trigger + 5 sticky notes (pattern, task, classifier tips, rules, extension). |
-| `b-half-built.workflow.json` | Full 8-node graph with three gaps: classifier prompt, Switch's GENERAL rule value, Technical handler prompt. |
-| `c-reference.workflow.json` | Working solution. |
+| `04-a-blank.workflow.json` | Manual Trigger + 5 sticky notes (pattern, task, classifier tips, rules, extension). |
+| `04-b-half-built.workflow.json` | Full 8-node graph with three gaps: classifier prompt, Switch's GENERAL rule value, Technical handler prompt. |
+| `04-c-reference.workflow.json` | Working solution. |
 
 ## Recommended session flow (~45 min)
 

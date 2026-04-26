@@ -1,6 +1,6 @@
 # Exercise 03 — Pattern: Prompt Chaining
 
-*Instructor-facing overview. Student-facing instructions are in `a-blank.md` and `b-half-built.md`.*
+*Instructor-facing overview. Student-facing instructions are in `03-a-blank.md` and `03-b-half-built.md`.*
 
 ## Learning goal
 
@@ -20,9 +20,9 @@ Article → 100-word summary → translation. Sample article is on hawker cultur
 
 | File | Use |
 |---|---|
-| `a-blank.workflow.json` | Manual Trigger + 5 sticky notes (pattern, task, expression hint, rules, extension). |
-| `b-half-built.workflow.json` | Full 7-node graph with three deliberate gaps: target language, IF threshold, second-summarise prompt. |
-| `c-reference.workflow.json` | Working solution. Release at debrief. |
+| `03-a-blank.workflow.json` | Manual Trigger + 5 sticky notes (pattern, task, expression hint, rules, extension). |
+| `03-b-half-built.workflow.json` | Full 7-node graph with three deliberate gaps: target language, IF threshold, second-summarise prompt. |
+| `03-c-reference.workflow.json` | Working solution. Release at debrief. |
 
 ## Recommended session flow (~45 min)
 
@@ -33,7 +33,7 @@ Article → 100-word summary → translation. Sample article is on hawker cultur
    - Trying to wire Translate twice instead of letting both upstream branches feed it.
    - Forgetting to attach the Ollama credential on the Chat Model.
 4. **(5 min) Compare summaries.** Run the workflow once with the default 100-word threshold. Run it again with the threshold lowered to 50. Watch the gate flip — and watch the stricter prompt take effect on the retry.
-5. **(5 min) Debrief.** Release `c-reference.workflow.json`. Highlight the converging-into-Translate pattern.
+5. **(5 min) Debrief.** Release `03-c-reference.workflow.json`. Highlight the converging-into-Translate pattern.
 
 ## The 3 gaps in variant B (answer key)
 

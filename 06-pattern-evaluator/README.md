@@ -1,6 +1,6 @@
 # Exercise 06 — Pattern: Evaluator / Optimiser
 
-*Instructor-facing overview. Student-facing instructions are in `a-blank.md` and `b-half-built.md`.*
+*Instructor-facing overview. Student-facing instructions are in `06-a-blank.md` and `06-b-half-built.md`.*
 
 ## Learning goal
 
@@ -20,9 +20,9 @@ Writing assistance — the model drafts an email, scores it, and revises if need
 
 | File | Use |
 |---|---|
-| `a-blank.workflow.json` | Manual Trigger + 5 sticky notes (pattern, task, prompt-design tips, rules, extension). |
-| `b-half-built.workflow.json` | Full 10-node graph with three gaps: scorer prompt, IF threshold, revise prompt. |
-| `c-reference.workflow.json` | Working solution. |
+| `06-a-blank.workflow.json` | Manual Trigger + 5 sticky notes (pattern, task, prompt-design tips, rules, extension). |
+| `06-b-half-built.workflow.json` | Full 10-node graph with three gaps: scorer prompt, IF threshold, revise prompt. |
+| `06-c-reference.workflow.json` | Working solution. |
 
 ## Recommended session flow (~60 min)
 

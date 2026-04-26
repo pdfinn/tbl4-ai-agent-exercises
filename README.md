@@ -36,9 +36,10 @@ course. Three groups of exercises:
 
 ### Workflow patterns (n8n)
 
-Each exercise ships in three forms — `a-blank.workflow.json` (trigger only +
-sticky notes), `b-half-built.workflow.json` (wired graph with 2-3 deliberate
-gaps), `c-reference.workflow.json` (working solution).
+Each exercise ships in three forms — `NN-a-blank.workflow.json` (trigger only
++ sticky notes), `NN-b-half-built.workflow.json` (wired graph with 2-3
+deliberate gaps), `NN-c-reference.workflow.json` (working solution), where
+`NN` is the exercise number.
 
 3. [Pattern: Prompt Chaining](./03-pattern-chaining/) — summarise → quality
    gate → translate, with retry on the failure branch.
@@ -64,8 +65,8 @@ file via **n8n → Workflows → top-right menu → Import from File**. Confirm
 the Ollama Chat Model has the `Ollama (local)` credential selected.
 
 Each exercise has its own `README.md` with instructor notes (session flow,
-gap answer key, common student errors), and student-facing `a-blank.md` /
-`b-half-built.md` files that match the corresponding workflow JSON.
+gap answer key, common student errors), and student-facing `NN-a-blank.md` /
+`NN-b-half-built.md` files that match the corresponding workflow JSON.
 
 ## Pedagogical principles
 
@@ -73,7 +74,7 @@ The course pedagogy emphasises:
 
 1. **Build, break, repair.** Pre-built reference workflows are released only
    at debrief — students who watch demos retain less than students who
-   debug. The `a-blank` and `b-half-built` variants force engagement.
+   debug. The `NN-a-blank` and `NN-b-half-built` variants force engagement.
 2. **The output panel is the classroom.** n8n's defining feature is that
    every node shows its input and output. Teach reading the data panel
    first; everything else follows.

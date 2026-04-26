@@ -1,6 +1,6 @@
 # Exercise 07 — Research Agent (Final Lab)
 
-*Instructor-facing overview. Student-facing instructions are in `a-blank.md` and `b-half-built.md`.*
+*Instructor-facing overview. Student-facing instructions are in `07-a-blank.md` and `07-b-half-built.md`.*
 
 ## Learning goal
 
@@ -21,9 +21,9 @@ Topic-driven research → analytic briefing → policy audit → revision. Defau
 | File | Purpose |
 |---|---|
 | `policies/ICD-203.xml` etc. | Four simplified IC analytic standards in slide-style XML. The audit step uses these. |
-| `a-blank.workflow.json` | Manual Trigger + 5 sticky notes (pattern, sub-systems, policies, rules, extension). |
-| `b-half-built.workflow.json` | Full 14-node graph with three substantial gaps: Synthesise Briefing prompt, Audit Briefing prompt, Audit Clean? gate value. |
-| `c-reference.workflow.json` | Working solution. |
+| `07-a-blank.workflow.json` | Manual Trigger + 5 sticky notes (pattern, sub-systems, policies, rules, extension). |
+| `07-b-half-built.workflow.json` | Full 14-node graph with three substantial gaps: Synthesise Briefing prompt, Audit Briefing prompt, Audit Clean? gate value. |
+| `07-c-reference.workflow.json` | Working solution. |
 
 ## Why this exercise opens the policies
 
@@ -37,7 +37,7 @@ The pedagogical thread:
 
 1. **(5 min) Whiteboard.** Draw all four patterns from session 4 across the board. Label which appears where in this workflow. The Research stage = Chaining. Wikipedia returning N hits and getting per-hit summaries = Parallel-ish. Audit gate = Routing. Audit failing → revise → recheck = Evaluator/Optimiser.
 2. **(10 min) Open the policies.** Walk the class through `policies/ICD-203.xml`. Show the slide-style minimal-tag XML — this is the same XML they saw in lecture. Read 2–3 rules out loud. Establish that the audit step's job is to ground findings in these rules.
-3. **(15 min) Pre-built skeleton.** Most pairs will start with `b-half-built.workflow.json`. Walk through what's already wired — the research stage runs Wikipedia → fetches → aggregates without student input. The student work is the three prompts and the gate.
+3. **(15 min) Pre-built skeleton.** Most pairs will start with `07-b-half-built.workflow.json`. Walk through what's already wired — the research stage runs Wikipedia → fetches → aggregates without student input. The student work is the three prompts and the gate.
 4. **(45 min) Pair build.** Watch for:
    - Synthesise Briefing prompts that ignore the IC style requirements (no likelihood scale, no information/judgment distinction).
    - Audit Briefing prompts that don't require rule-grounded findings ("the briefing seems unprofessional" is not a finding).

@@ -1,6 +1,6 @@
 # Exercise 05 — Pattern: Parallelisation
 
-*Instructor-facing overview. Student-facing instructions are in `a-blank.md` and `b-half-built.md`.*
+*Instructor-facing overview. Student-facing instructions are in `05-a-blank.md` and `05-b-half-built.md`.*
 
 ## Learning goal
 
@@ -20,9 +20,9 @@ Document analysis. The reference uses a memo about hawker centre operations — 
 
 | File | Use |
 |---|---|
-| `a-blank.workflow.json` | Manual Trigger + 5 sticky notes (pattern, task, Merge wiring tips, rules, extension). |
-| `b-half-built.workflow.json` | Full 8-node graph with three gaps: Entities prompt, Sentiment prompt, Compose Report template. |
-| `c-reference.workflow.json` | Working solution. |
+| `05-a-blank.workflow.json` | Manual Trigger + 5 sticky notes (pattern, task, Merge wiring tips, rules, extension). |
+| `05-b-half-built.workflow.json` | Full 8-node graph with three gaps: Entities prompt, Sentiment prompt, Compose Report template. |
+| `05-c-reference.workflow.json` | Working solution. |
 
 ## Recommended session flow (~60 min)
 

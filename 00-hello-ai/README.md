@@ -54,7 +54,7 @@ Three wins in forty minutes beats one win in forty minutes.
 
 ### Stage 1 (~10 min)
 
-1. Students import `stage-1-say-hello.workflow.json`.
+1. Students import `00-stage-1-say-hello.workflow.json`.
 2. They click on the **Ollama Chat Model** sub-node, confirm the credential is `Ollama (local)` and model is `llama3.1:8b`. If the credential isn't visible, the tbl4-n8n init container didn't seed — run the setup script.
 3. Click *Execute Workflow*.
 4. First run: wait. It WILL take 20–40 seconds if the model wasn't pre-warmed. Tell the class this out loud.
@@ -63,7 +63,7 @@ Three wins in forty minutes beats one win in forty minutes.
 
 ### Stage 2 (~15 min)
 
-1. Students open `stage-2-ai-reads-data.workflow.json` or build on Stage 1.
+1. Students open `00-stage-2-ai-reads-data.workflow.json` or build on Stage 1.
 2. Core new concept: `{{ JSON.stringify($json) }}` inside the prompt. That expression is the entire "AI reads the JSON" trick. Say it out loud: "`$json` means the data that just arrived from the previous node. `JSON.stringify(...)` turns it into text we can put in the prompt. That's it."
 3. Run the workflow. The answer should mention specific areas or conditions pulled from the actual forecast.
 4. **Change the question.** Have students replace the prompt with different questions about the same data:
@@ -74,7 +74,7 @@ Three wins in forty minutes beats one win in forty minutes.
 
 ### Stage 3 (~15 min)
 
-1. Students open `stage-3-email-the-answer.workflow.json`.
+1. Students open `00-stage-3-email-the-answer.workflow.json`.
 2. The Gmail setup is the real time cost here (2FA + App Password generation). Walk through it with the class — don't leave students to figure it out individually.
 3. Replace the placeholder emails in the Email Me node (From + To).
 4. Create a new SMTP credential: user = personal Gmail, password = the 16-character App Password (NOT the Gmail password).
