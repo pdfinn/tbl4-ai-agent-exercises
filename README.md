@@ -8,7 +8,6 @@ course. Three groups of exercises:
 - **Workflow patterns** (03–07) — n8n workflows realising the four patterns
   from Session 4 (slides 2484–2612), culminating in a research agent that
   audits its own output against IC analytic standards.
-- **Optional extensions** (08–09) — sub-agents and model comparison.
 
 ## Exercises
 
@@ -54,15 +53,6 @@ gaps), `c-reference.workflow.json` (working solution).
    patterns. Wikipedia-grounded research; output audited against simplified
    ICD policies; revise on audit findings. Uses simplified slide-style XML
    policies in `07-research-agent-n8n/policies/`.
-
-### Optional extensions
-
-8. [Policy Simplifier](./08-policy-simplifier/) — *optional*. A sub-agent that
-   converts heavy schema XML into slide-style minimal-tag XML. Demonstrates
-   LLM as document-format translator.
-9. [Model Rodeo](./09-model-rodeo/) — *optional*. Compare LLMs on the same
-   routing workflow. Shows in your hands why "tool use beats reasoning" for
-   workflow agents (slide 2619). Skip if your machine can only hold one model.
 
 ## How to use
 
