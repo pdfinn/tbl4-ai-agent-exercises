@@ -1,0 +1,195 @@
+<policy>
+<identifier>ICD-203</identifier>
+<title>Analytic Standards</title>
+
+<purpose>
+Establishes five core Analytic Standards and nine Analytic Tradecraft Standards
+that govern the production and evaluation of all IC analytic products. Every
+analytic product shall be consistent with these standards.
+</purpose>
+
+<section>
+<heading>Core Analytic Standards</heading>
+
+<rule>
+<name>Objective</name>
+<text>
+Analysts must perform their functions with objectivity and with awareness of
+their own assumptions and reasoning. Employ reasoning techniques that reveal
+and mitigate bias. Consider alternative perspectives and contrary information.
+Do not be unduly constrained by previous judgments when new developments
+indicate a modification is necessary.
+</text>
+</rule>
+
+<rule>
+<name>Independent of political consideration</name>
+<text>
+Analytic assessments must not be distorted by, nor shaped for, advocacy of a
+particular audience, agenda, or policy viewpoint. Analytic judgments must not
+be influenced by preference for a particular policy.
+</text>
+</rule>
+
+<rule>
+<name>Timely</name>
+<text>
+Analysis must be disseminated in time to be actionable by customers. Remain
+aware of events of intelligence interest, customer activities, and
+intelligence priorities.
+</text>
+</rule>
+
+<rule>
+<name>Based on all available sources</name>
+<text>
+Analysis should be informed by all relevant information available. Identify
+and address critical information gaps.
+</text>
+</rule>
+
+<rule>
+<name>Implements tradecraft standards</name>
+<text>
+Analytic products must implement the nine Analytic Tradecraft Standards listed
+in the next section.
+</text>
+</rule>
+
+</section>
+
+<section>
+<heading>Analytic Tradecraft Standards</heading>
+
+<rule>
+<name>Sources quality and credibility</name>
+<text>
+Identify underlying sources and methodologies upon which judgments are based.
+Use source descriptors to describe factors affecting source quality and
+credibility: accuracy and completeness, possible denial and deception, age and
+currency, technical elements of collection, source access, validation,
+motivation, possible bias, and expertise. Source summary statements are
+strongly encouraged.
+</text>
+</rule>
+
+<rule>
+<name>Expresses uncertainty</name>
+<text>
+Indicate and explain the basis for uncertainties associated with major
+judgments: the likelihood of an event and the analyst's confidence in the
+basis for that judgment. Note causes of uncertainty and explain how they
+affect analysis. Identify indicators that would alter the level of
+uncertainty.
+
+When expressing likelihood, use exactly one of the two term-sets defined in
+the probability scale below. Do not mix terms from different rows without a
+disclaimer noting they refer to the same probability.
+
+Do not combine a confidence level (such as "high confidence") with a degree of
+likelihood in the same sentence.
+</text>
+</rule>
+
+<rule>
+<name>Distinguishes information from judgment</name>
+<text>
+Clearly separate statements conveying underlying intelligence information from
+statements conveying assumptions or judgments. State assumptions explicitly
+when they serve as the linchpin of an argument or bridge information gaps.
+Explain the implications for judgments if assumptions prove incorrect.
+Identify indicators that, if detected, would alter judgments.
+</text>
+<definition>
+<term>assumption</term>
+<meaning>A supposition used to frame or support an argument.</meaning>
+</definition>
+<definition>
+<term>judgment</term>
+<meaning>A conclusion based on underlying intelligence information, analysis, and assumptions.</meaning>
+</definition>
+</rule>
+
+<rule>
+<name>Analysis of alternatives</name>
+<text>
+Systematically evaluate differing hypotheses to explain events, explore
+near-term outcomes, and imagine possible futures. Identify and assess
+plausible alternative hypotheses, particularly when judgments contend with
+significant uncertainty or when low-probability events could produce
+high-impact results. Address associated assumptions, likelihood, and
+implications. Identify indicators that would affect the likelihood of
+alternatives.
+</text>
+</rule>
+
+<rule>
+<name>Customer relevance</name>
+<text>
+Provide information and insight on issues relevant to customers. Address
+implications: prospects, context, threats, or factors affecting opportunities
+for action.
+</text>
+</rule>
+
+<rule>
+<name>Clear argumentation</name>
+<text>
+Present a clear main analytic message up front. A multi-judgment product must
+have an overall message drawn from those judgments. Support all judgments with
+relevant intelligence and coherent reasoning. Language and syntax should
+convey meaning unambiguously. Be internally consistent and acknowledge
+significant supporting and contrary information.
+</text>
+</rule>
+
+<rule>
+<name>Change or consistency</name>
+<text>
+State how major judgments are consistent with, differ from, or represent
+initial coverage relative to previously published analysis. Avoid boilerplate;
+make clear how new information or reasoning led to the current judgments.
+Recurrent products should note any changes; when there are no changes, they
+need not confirm consistency. Significant differences between IC elements
+should be brought to customers' attention.
+</text>
+</rule>
+
+<rule>
+<name>Accurate judgments</name>
+<text>
+Apply expertise and logic to make the most accurate judgments possible, based
+on available information and known gaps. Do not avoid difficult judgments to
+minimise the risk of being wrong. Express judgments as clearly and precisely
+as possible, addressing likelihood, timing, and nature of the outcome.
+</text>
+</rule>
+
+<rule>
+<name>Visual information</name>
+<text>
+Use visuals to clarify an analytic message and to complement or enhance the
+presentation of data and analysis, particularly for spatial or temporal
+relationships. Visuals must be clear and pertinent; analytic content in
+visuals must adhere to other tradecraft standards.
+</text>
+</rule>
+
+</section>
+
+<section>
+<heading>Probability scale</heading>
+
+<scale>
+<level><range>01 to 05 percent</range><term>almost no chance</term><term>remote</term></level>
+<level><range>05 to 20 percent</range><term>very unlikely</term><term>highly improbable</term></level>
+<level><range>20 to 45 percent</range><term>unlikely</term><term>improbable</term></level>
+<level><range>45 to 55 percent</range><term>roughly even chance</term><term>roughly even odds</term></level>
+<level><range>55 to 80 percent</range><term>likely</term><term>probable</term></level>
+<level><range>80 to 95 percent</range><term>very likely</term><term>highly probable</term></level>
+<level><range>95 to 99 percent</range><term>almost certain</term><term>nearly certain</term></level>
+</scale>
+
+</section>
+
+</policy>

@@ -1,0 +1,121 @@
+{
+  "name": "Ex03 Prompt Chaining — B Half-Built (find the 3 gaps)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 400],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 400],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "article", "value": "Singapore's hawker centres are not merely places to eat — they are the cultural heart of the nation. Founded in the 1960s and 1970s as a public-health response to unsanitary street vending, these government-managed food courts were a deliberate act of urban planning. Today, more than a hundred operate across the island, each housing dozens of stalls selling everything from chicken rice and laksa to roti prata and char kway teow. The dishes themselves are a living archive of Singapore's migration history: Hokkien, Teochew, Hainanese, Cantonese, Malay, Tamil, and Peranakan culinary traditions intermingle on a single hawker centre's tile floor. In 2020, hawker culture was inscribed on UNESCO's Representative List of the Intangible Cultural Heritage of Humanity — a recognition that the National Heritage Board had spent years lobbying for. The government's stated goal is to preserve hawker culture for future generations, but the economics are difficult: hawker rents are rising, the average hawker is in their late fifties, and few young Singaporeans see hawking as a viable career. Various policy interventions — incubator programmes, training subsidies, modernised stall designs — have produced mixed results. Hawkers are quick to point out that no policy can replicate the apprenticeship system that once produced master cooks. As Singapore continues to modernise, the question is not whether hawker culture will survive, but in what form.", "type": "string" },
+            { "id": "i2", "name": "target_language", "value": "", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "sum1",
+      "name": "Summarise (1st)",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [640, 400],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Summarise this article in under 100 words. Be concise and capture the key points. Output the summary text only — no preamble.\n\nArticle:\n{{ $('Set Input').item.json.article }}"
+      }
+    },
+    {
+      "id": "gate",
+      "name": "Under 100 words?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [840, 400],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            {
+              "id": "g1",
+              "leftValue": "={{ $json.text.split(/\\s+/).filter(w => w.length > 0).length }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "lte" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "sum2",
+      "name": "Summarise (Stricter)",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1040, 580],
+      "parameters": { "promptType": "define", "text": "" }
+    },
+    {
+      "id": "translate",
+      "name": "Translate",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1240, 400],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Translate the following text to {{ $('Set Input').item.json.target_language }}. Preserve meaning, adapt idioms naturally. Output the translation only — no preamble, no notes.\n\nText:\n{{ $json.text }}"
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [840, 720],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-gaps",
+      "name": "Gaps",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1200,
+        "height": 220,
+        "color": 5,
+        "content": "## Half-Built — 3 gaps\n\n1. **Set Input → `target_language`** is blank. Pick a language for the translation step. (`French`, `Mandarin`, `Tamil`, `Bahasa Melayu` — your call.)\n2. **Under 100 words? → rightValue** is set to `0` (which means \"never pass the gate\"). Change it to the threshold the slides used. The expression `$json.text.split(/\\s+/).filter(w => w.length > 0).length` already counts words on the left side; you set the comparison value on the right.\n3. **Summarise (Stricter) → prompt text** is blank. Write a prompt that runs *only when the first summary was too long*. Be more aggressive: lower the word limit (try 80), forbid filler, ask for keywords-only style. Reference the article via `{{ $('Set Input').item.json.article }}`.\n\n**Rule:** no Code node. The pattern is *Prompt Chaining with a quality gate* — same as the slide.\n"
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": { "main": [[{ "node": "Summarise (1st)", "type": "main", "index": 0 }]] },
+    "Summarise (1st)": { "main": [[{ "node": "Under 100 words?", "type": "main", "index": 0 }]] },
+    "Under 100 words?": {
+      "main": [
+        [{ "node": "Translate", "type": "main", "index": 0 }],
+        [{ "node": "Summarise (Stricter)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Summarise (Stricter)": { "main": [[{ "node": "Translate", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": {
+      "ai_languageModel": [[
+        { "node": "Summarise (1st)", "type": "ai_languageModel", "index": 0 },
+        { "node": "Summarise (Stricter)", "type": "ai_languageModel", "index": 0 },
+        { "node": "Translate", "type": "ai_languageModel", "index": 0 }
+      ]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

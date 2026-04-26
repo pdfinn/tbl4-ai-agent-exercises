@@ -1,0 +1,97 @@
+{
+  "name": "Ex02b Stage 1 — Expressions and Cross-Node Refs",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 400],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 400],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "sentence", "value": "I told you this won't work.", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "rephrase",
+      "name": "Rephrase Politely",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [640, 400],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Rephrase the following sentence in a more polite, professional tone. Output ONLY the rephrased sentence — no preamble, no quotes, no notes.\n\nSentence:\n{{ $('Set Input').item.json.sentence }}"
+      }
+    },
+    {
+      "id": "output",
+      "name": "Set Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [840, 400],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "o1", "name": "original", "value": "={{ $('Set Input').item.json.sentence }}", "type": "string" },
+            { "id": "o2", "name": "rephrased", "value": "={{ $json.text }}", "type": "string" },
+            { "id": "o3", "name": "display", "value": "=Original:  {{ $('Set Input').item.json.sentence }}\nRephrased: {{ $json.text }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [640, 580],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-goal",
+      "name": "Stage 1 — Expressions and cross-node refs",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 900,
+        "height": 200,
+        "color": 7,
+        "content": "## Stage 1 — Expressions and cross-node references\n\nFour functional nodes plus an Ollama Chat Model. Click *Execute Workflow* and read the output panel on **Set Output**.\n\n**What this stage drills:**\n- The `=` prefix on a field — that's how n8n knows the value is an expression, not a literal.\n- `{{ ... }}` — the expression bracket. Inside, you write JavaScript-flavoured code.\n- `$('Set Input').item.json.sentence` — *cross-node reference*. Read a field from a named node anywhere in the workflow.\n- `$json.text` — *immediate-upstream reference*. The data that just arrived from the previous node.\n- The `text` field on a Basic LLM Chain's output. Always check the output panel to confirm where the LLM's response lives."
+      }
+    },
+    {
+      "id": "note-ollama",
+      "name": "About Ollama Chat Model",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [600, 720],
+      "parameters": {
+        "width": 460,
+        "height": 160,
+        "color": 4,
+        "content": "## Sub-node wiring\n\nThe Ollama Chat Model isn't part of the main flow. It connects *sideways* into the Basic LLM Chain through a different-coloured handle: the `ai_languageModel` connection.\n\nWhen you click on the Chat Model after running, you won't see input/output items the same way you do for main nodes — sub-nodes work differently."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": { "main": [[{ "node": "Rephrase Politely", "type": "main", "index": 0 }]] },
+    "Rephrase Politely": { "main": [[{ "node": "Set Output", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Rephrase Politely", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

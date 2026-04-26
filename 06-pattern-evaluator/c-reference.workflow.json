@@ -1,0 +1,172 @@
+{
+  "name": "Ex06 Evaluator/Optimiser — C Reference",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "task", "value": "Draft a short, friendly email to my team asking everyone to send a one-paragraph weekly update by 5pm Friday. Tone: warm but clear. Length: under 80 words.", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "draft",
+      "name": "Generate Draft",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [640, 500],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write the requested document. Output the document only — no preamble, no explanation, no notes.\n\nRequest:\n{{ $('Set Input').item.json.task }}"
+      }
+    },
+    {
+      "id": "score",
+      "name": "Score Draft",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [840, 500],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Evaluate the following draft against the original brief. Score it from 1 to 10 considering: clarity, tone match, length match, completeness.\n\nOutput EXACTLY ONE number between 1 and 10. No explanation, no punctuation, no preamble. Just the number.\n\nBrief:\n{{ $('Set Input').item.json.task }}\n\nDraft:\n{{ $json.text }}"
+      }
+    },
+    {
+      "id": "gate",
+      "name": "Score >= 8?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [1040, 500],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            {
+              "id": "g1",
+              "leftValue": "={{ Number($json.text.trim()) }}",
+              "rightValue": 8,
+              "operator": { "type": "number", "operation": "gte" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "approved",
+      "name": "Final (Approved)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1280, 320],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "score", "value": "={{ $('Score Draft').item.json.text.trim() }}", "type": "string" },
+            { "id": "a2", "name": "outcome", "value": "approved-on-first-try", "type": "string" },
+            { "id": "a3", "name": "final_draft", "value": "={{ $('Generate Draft').item.json.text }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "critique",
+      "name": "Critique",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1240, 680],
+      "parameters": {
+        "promptType": "define",
+        "text": "=The following draft scored below the quality threshold. Provide ONE concrete sentence of actionable feedback — what specifically should be changed. Be direct. Do not write a new draft.\n\nBrief:\n{{ $('Set Input').item.json.task }}\n\nDraft:\n{{ $('Generate Draft').item.json.text }}\n\nScore: {{ $('Score Draft').item.json.text.trim() }}/10"
+      }
+    },
+    {
+      "id": "revise",
+      "name": "Revise",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1440, 680],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Revise the draft based on the feedback. Output the revised document only — no preamble.\n\nBrief:\n{{ $('Set Input').item.json.task }}\n\nOriginal draft:\n{{ $('Generate Draft').item.json.text }}\n\nFeedback:\n{{ $('Critique').item.json.text }}"
+      }
+    },
+    {
+      "id": "revised",
+      "name": "Final (Revised)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1640, 680],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "r1", "name": "score", "value": "={{ $('Score Draft').item.json.text.trim() }}", "type": "string" },
+            { "id": "r2", "name": "outcome", "value": "revised-after-critique", "type": "string" },
+            { "id": "r3", "name": "feedback", "value": "={{ $('Critique').item.json.text }}", "type": "string" },
+            { "id": "r4", "name": "final_draft", "value": "={{ $('Revise').item.json.text }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1040, 920],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1500,
+        "height": 200,
+        "color": 7,
+        "content": "## Pattern: Evaluator / Optimiser (Reference)\n\nGenerate, score the output, then either accept or critique-and-revise.\n\n```\nTask → Generate Draft → Score Draft (1-10) → Score >= 8? ─┬─ yes ─→ Final (Approved)\n                                                            └─ no  ─→ Critique → Revise → Final (Revised)\n```\n\n**Two terminal nodes.** Both contain the same fields (`score`, `outcome`, `final_draft`) so downstream consumers can read the result regardless of which path ran. The `outcome` field tells you which path produced the output.\n\n**One retry only.** A real production version would loop with a counter; this exercise demonstrates the *pattern* with one revision pass."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": { "main": [[{ "node": "Generate Draft", "type": "main", "index": 0 }]] },
+    "Generate Draft": { "main": [[{ "node": "Score Draft", "type": "main", "index": 0 }]] },
+    "Score Draft": { "main": [[{ "node": "Score >= 8?", "type": "main", "index": 0 }]] },
+    "Score >= 8?": {
+      "main": [
+        [{ "node": "Final (Approved)", "type": "main", "index": 0 }],
+        [{ "node": "Critique", "type": "main", "index": 0 }]
+      ]
+    },
+    "Critique": { "main": [[{ "node": "Revise", "type": "main", "index": 0 }]] },
+    "Revise": { "main": [[{ "node": "Final (Revised)", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": {
+      "ai_languageModel": [[
+        { "node": "Generate Draft", "type": "ai_languageModel", "index": 0 },
+        { "node": "Score Draft", "type": "ai_languageModel", "index": 0 },
+        { "node": "Critique", "type": "ai_languageModel", "index": 0 },
+        { "node": "Revise", "type": "ai_languageModel", "index": 0 }
+      ]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

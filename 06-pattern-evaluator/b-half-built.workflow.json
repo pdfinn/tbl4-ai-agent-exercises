@@ -1,0 +1,166 @@
+{
+  "name": "Ex06 Evaluator/Optimiser — B Half-Built (find the 3 gaps)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "task", "value": "Draft a short, friendly email to my team asking everyone to send a one-paragraph weekly update by 5pm Friday. Tone: warm but clear. Length: under 80 words.", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "draft",
+      "name": "Generate Draft",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [640, 500],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write the requested document. Output the document only — no preamble, no explanation, no notes.\n\nRequest:\n{{ $('Set Input').item.json.task }}"
+      }
+    },
+    {
+      "id": "score",
+      "name": "Score Draft",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [840, 500],
+      "parameters": { "promptType": "define", "text": "" }
+    },
+    {
+      "id": "gate",
+      "name": "Score >= 8?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [1040, 500],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            {
+              "id": "g1",
+              "leftValue": "={{ Number($json.text.trim()) }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "gte" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "approved",
+      "name": "Final (Approved)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1280, 320],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "score", "value": "={{ $('Score Draft').item.json.text.trim() }}", "type": "string" },
+            { "id": "a2", "name": "outcome", "value": "approved-on-first-try", "type": "string" },
+            { "id": "a3", "name": "final_draft", "value": "={{ $('Generate Draft').item.json.text }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "critique",
+      "name": "Critique",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1240, 680],
+      "parameters": {
+        "promptType": "define",
+        "text": "=The following draft scored below the quality threshold. Provide ONE concrete sentence of actionable feedback — what specifically should be changed. Be direct. Do not write a new draft.\n\nBrief:\n{{ $('Set Input').item.json.task }}\n\nDraft:\n{{ $('Generate Draft').item.json.text }}\n\nScore: {{ $('Score Draft').item.json.text.trim() }}/10"
+      }
+    },
+    {
+      "id": "revise",
+      "name": "Revise",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1440, 680],
+      "parameters": { "promptType": "define", "text": "" }
+    },
+    {
+      "id": "revised",
+      "name": "Final (Revised)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1640, 680],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "r1", "name": "score", "value": "={{ $('Score Draft').item.json.text.trim() }}", "type": "string" },
+            { "id": "r2", "name": "outcome", "value": "revised-after-critique", "type": "string" },
+            { "id": "r3", "name": "feedback", "value": "={{ $('Critique').item.json.text }}", "type": "string" },
+            { "id": "r4", "name": "final_draft", "value": "={{ $('Revise').item.json.text }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1040, 920],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-gaps",
+      "name": "Gaps",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1500,
+        "height": 240,
+        "color": 5,
+        "content": "## Half-Built — 3 gaps\n\n1. **Score Draft → prompt** is blank. Write a NARROW prompt that returns ONE NUMBER between 1 and 10. Score the draft against the brief on clarity, tone, length, completeness. Reference the brief via `$('Set Input').item.json.task` and the draft via `$json.text` (the draft is the previous-node output). No explanation, no punctuation — just the number.\n\n2. **Score >= 8? → rightValue** is set to `0` (always passes). Change it to the threshold from the node's name (8). The expression on the left already converts the score text to a number with `Number($json.text.trim())`.\n\n3. **Revise → prompt** is blank. Write a prompt that takes the original draft AND the feedback and produces a revised version. Reference:\n   - the brief: `{{ $('Set Input').item.json.task }}`\n   - the original draft: `{{ $('Generate Draft').item.json.text }}`\n   - the feedback: `{{ $('Critique').item.json.text }}`\n   Output the revised document only — no preamble.\n\n**Rule:** no Code node. The pattern is *Evaluator / Optimiser*. One retry only — no infinite loop.\n"
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": { "main": [[{ "node": "Generate Draft", "type": "main", "index": 0 }]] },
+    "Generate Draft": { "main": [[{ "node": "Score Draft", "type": "main", "index": 0 }]] },
+    "Score Draft": { "main": [[{ "node": "Score >= 8?", "type": "main", "index": 0 }]] },
+    "Score >= 8?": {
+      "main": [
+        [{ "node": "Final (Approved)", "type": "main", "index": 0 }],
+        [{ "node": "Critique", "type": "main", "index": 0 }]
+      ]
+    },
+    "Critique": { "main": [[{ "node": "Revise", "type": "main", "index": 0 }]] },
+    "Revise": { "main": [[{ "node": "Final (Revised)", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": {
+      "ai_languageModel": [[
+        { "node": "Generate Draft", "type": "ai_languageModel", "index": 0 },
+        { "node": "Score Draft", "type": "ai_languageModel", "index": 0 },
+        { "node": "Critique", "type": "ai_languageModel", "index": 0 },
+        { "node": "Revise", "type": "ai_languageModel", "index": 0 }
+      ]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

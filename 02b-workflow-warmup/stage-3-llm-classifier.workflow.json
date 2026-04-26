@@ -1,0 +1,136 @@
+{
+  "name": "Ex02b Stage 3 — LLM Classifier + IF",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 400],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 400],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "sentence", "value": "I just got a promotion at work today!", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "classify",
+      "name": "Classify Mood",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [640, 400],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Read the sentence and respond with EXACTLY ONE WORD: HAPPY or SAD. No explanation, no punctuation, no preamble.\n\nSentence:\n{{ $('Set Input').item.json.sentence }}"
+      }
+    },
+    {
+      "id": "gate",
+      "name": "Is happy?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [840, 400],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "g1", "leftValue": "={{ $json.text.trim() }}", "rightValue": "HAPPY", "operator": { "type": "string", "operation": "contains" } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "happy",
+      "name": "Happy Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1080, 280],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "h1", "name": "input", "value": "={{ $('Set Input').item.json.sentence }}", "type": "string" },
+            { "id": "h2", "name": "classification", "value": "HAPPY", "type": "string" },
+            { "id": "h3", "name": "response", "value": "That's wonderful to hear. Congratulations — enjoy the moment.", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "sad",
+      "name": "Sad Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1080, 520],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "s1", "name": "input", "value": "={{ $('Set Input').item.json.sentence }}", "type": "string" },
+            { "id": "s2", "name": "classification", "value": "SAD", "type": "string" },
+            { "id": "s3", "name": "response", "value": "I'm sorry you're feeling that way. Take care of yourself.", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [640, 580],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-goal",
+      "name": "Stage 3 — LLM classifier + IF (Ex 04 in miniature)",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1100,
+        "height": 220,
+        "color": 7,
+        "content": "## Stage 3 — LLM classifier + IF (Ex 04 in miniature)\n\nThis stage combines what you learned in Stage 1 (LLM call + cross-node refs) and Stage 2 (IF routing). The result is a *narrow-prompt classifier* feeding a routing decision — exactly the shape Ex 04 (Routing) uses, but in miniature.\n\n**What this stage drills:**\n- *Narrow-output prompts*: the Classify Mood prompt insists on EXACTLY ONE WORD, no punctuation, no explanation. This output discipline is what makes the IF gate downstream actually work.\n- `{{ $json.text.trim() }}` on the IF's left value — `.trim()` because LLMs sometimes append whitespace or newlines.\n- *Contains* (not *equals*) for the IF operator — forgiving of minor variations in the LLM's output.\n- *Try various inputs*: try \"I lost my keys\", \"My team won the match\", \"Mondays are exhausting\". Each should route correctly. If one routes wrong, the classifier prompt isn't narrow enough."
+      }
+    },
+    {
+      "id": "note-bridge",
+      "name": "Bridge to Ex 04",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1100, 700],
+      "parameters": {
+        "width": 380,
+        "height": 180,
+        "color": 5,
+        "content": "## You've now built Ex 04 in miniature\n\nEx 04 (Routing) does exactly this shape but with three categories (BILLING / TECHNICAL / GENERAL) and a Switch node instead of an IF.\n\nYou're ready for Ex 03–07. The primitives won't surprise you any more — only the patterns will."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": { "main": [[{ "node": "Classify Mood", "type": "main", "index": 0 }]] },
+    "Classify Mood": { "main": [[{ "node": "Is happy?", "type": "main", "index": 0 }]] },
+    "Is happy?": {
+      "main": [
+        [{ "node": "Happy Response", "type": "main", "index": 0 }],
+        [{ "node": "Sad Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Classify Mood", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

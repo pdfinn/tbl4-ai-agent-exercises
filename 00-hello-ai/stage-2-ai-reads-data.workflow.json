@@ -1,0 +1,76 @@
+{
+  "name": "Ex00 Stage 2 — AI Reads Data",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {}
+    },
+    {
+      "id": "http",
+      "name": "Get Forecast",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [460, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.data.gov.sg/v1/environment/2-hour-weather-forecast",
+        "options": {}
+      }
+    },
+    {
+      "id": "chain",
+      "name": "Ask the AI",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [680, 300],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Based on this Singapore weather data, do I need an umbrella if I'm going to Raffles Place in the next two hours? Answer in one sentence.\n\nData:\n{{ JSON.stringify($json) }}"
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [680, 480],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-goal",
+      "name": "Goal",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 80],
+      "parameters": {
+        "width": 700,
+        "height": 180,
+        "color": 7,
+        "content": "## Stage 2 — Let the AI read the data\n\nOne new node: the **Get Forecast** HTTP request. It fetches real Singapore weather data as JSON. The *Ask the AI* node receives this JSON and the LLM figures out the answer on its own.\n\n**The key idea:** you don't need to navigate the JSON yourself. You shove the whole blob into the prompt and ask a plain-English question. The LLM does the extraction."
+      }
+    },
+    {
+      "id": "note-pattern",
+      "name": "The bushleague-but-useful pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [660, 640],
+      "parameters": {
+        "width": 460,
+        "height": 160,
+        "color": 4,
+        "content": "## The `{{ JSON.stringify($json) }}` trick\n\nThat expression dumps the entire previous-node output into the prompt as a JSON string. The LLM reads the whole blob and answers your question.\n\nThis is a **legitimate production pattern**, not a hack. For small API responses (< a few KB), just let the LLM do the extraction."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Get Forecast", "type": "main", "index": 0 }]] },
+    "Get Forecast": { "main": [[{ "node": "Ask the AI", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Ask the AI", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

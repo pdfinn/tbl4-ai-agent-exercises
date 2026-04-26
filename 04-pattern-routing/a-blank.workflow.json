@@ -1,0 +1,80 @@
+{
+  "name": "Ex04 Routing — A Blank Starter",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "parameters": {}
+    },
+    {
+      "id": "note-pattern",
+      "name": "The pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1100,
+        "height": 200,
+        "color": 7,
+        "content": "## Exercise 04 — Routing\n\n**The pattern (from the slides):**\n```\nIn → Classify ─→ Switch ─┬─ Branch A → Specialist A → Out\n                          ├─ Branch B → Specialist B → Out\n                          └─ Branch C → Specialist C → Out\n```\n\nOne LLM classifies the input; a Switch dispatches to specialised branches. Each branch has its own prompt tuned for that category. Build a customer-support classifier with three branches: `BILLING`, `TECHNICAL`, `GENERAL`."
+      }
+    },
+    {
+      "id": "note-task",
+      "name": "Your task",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 280],
+      "parameters": {
+        "width": 540,
+        "height": 280,
+        "color": 4,
+        "content": "## Build it\n\n**Inputs:**\n- A `customer_message` field (use a Set node).\n\n**Pipeline:**\n1. Set Input — the message\n2. Classify (Basic LLM Chain) — outputs **EXACTLY ONE WORD**: BILLING, TECHNICAL, or GENERAL. Be ruthless about output format — no punctuation, no explanation, no preamble.\n3. Switch (`n8n-nodes-base.switch`) — three rules, one per category, matching the classifier output.\n4. Three Basic LLM Chains — one per category, each with its own specialist prompt.\n\n**Model:** `llama3.1:8b`. **Credential:** `Ollama (local)`.\n\nOne Ollama Chat Model sub-node feeds all four Chains."
+      }
+    },
+    {
+      "id": "note-classifier-tips",
+      "name": "Classifier prompt tips",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [760, 280],
+      "parameters": {
+        "width": 540,
+        "height": 280,
+        "color": 4,
+        "content": "## Classifier prompts are NARROW\n\nFrom the slides: workflow-agent prompts are narrow, specific, and produce structured output. \"Summarise this\" is a *chatbot* prompt. \"Output one word: BILLING, TECHNICAL, or GENERAL — do not explain\" is a *workflow* prompt.\n\n**Things to include:**\n- Role (\"You are a customer support classifier\")\n- The exact set of allowed outputs\n- A short rule for each category\n- A fallback (\"If unsure, choose GENERAL\")\n- Output-shape constraints (\"one word, in capitals, no punctuation\")\n\n**Things to avoid:**\n- \"Be helpful\" (too vague)\n- Examples of what NOT to do (LLMs sometimes copy the negative example)\n- Long preambles"
+      }
+    },
+    {
+      "id": "note-rules",
+      "name": "Rules",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 580],
+      "parameters": {
+        "width": 540,
+        "height": 200,
+        "color": 6,
+        "content": "## Rules\n\n- **No Code node.** Allowed: Set, Switch, Basic LLM Chain, Ollama Chat Model.\n- **Test all three branches.** Run the workflow three times with different messages — one billing, one technical, one general. Confirm each routes correctly.\n- **The Switch matches text against `$json.text`.** That's where the classifier's output lives. Check the Classify node's output panel before configuring Switch."
+      }
+    },
+    {
+      "id": "note-extension",
+      "name": "Extension",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [760, 580],
+      "parameters": {
+        "width": 540,
+        "height": 200,
+        "color": 5,
+        "content": "## Extension — if you finish early\n\n- **Add a fourth category.** `URGENT` for messages that mention service outage, security, or data loss. Route to a fast-track specialist. (Both your classifier prompt AND your Switch need updating.)\n- **Sub-route within technical.** Inside the Technical branch, add a second classifier (Apple / Android / Web / Other) and route again. Patterns nest.\n- **Replace Manual Trigger with a Form Trigger.** Now anyone can paste a customer message and get a routed response."
+      }
+    }
+  ],
+  "connections": {},
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

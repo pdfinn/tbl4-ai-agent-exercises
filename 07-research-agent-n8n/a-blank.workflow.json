@@ -1,0 +1,80 @@
+{
+  "name": "Ex07 Research Agent — A Blank Starter",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 700],
+      "parameters": {}
+    },
+    {
+      "id": "note-pattern",
+      "name": "The final lab",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1200,
+        "height": 220,
+        "color": 7,
+        "content": "## Exercise 07 — Research Agent (Final Lab)\n\nThe integration exercise. You will combine **all four patterns** from Session 4 into one workflow.\n\n```\nTopic ─→ Generate Query ─→ Wikipedia Search ─→ Split Hits ─→ Fetch Summary (× N) ─→ Aggregate ─→ Synthesise Briefing ─→ Audit Briefing ─→ Audit Clean?\n         (Chaining)        (HTTP)              (Split Out)   (parallel-ish)        (Aggregate)   (Chaining)              (Evaluator)         ├─ yes ─→ Final\n                                                                                                                                                  └─ no ─→ Revise → Final\n                                                                                                                                                            (Optimiser)\n```\n\n**Goal:** given a research topic, the workflow searches Wikipedia, drafts an analytic briefing in IC style, audits it against the four ICD policies in `policies/`, and either ships the briefing or revises it based on the audit findings."
+      }
+    },
+    {
+      "id": "note-stages",
+      "name": "Three sub-systems",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "parameters": {
+        "width": 580,
+        "height": 380,
+        "color": 4,
+        "content": "## Build it in three sub-systems\n\n### A. Research (left of canvas)\n1. Set Input — `topic` field\n2. Generate Query (Basic LLM Chain) — outputs ONE Wikipedia search query, max 8 words, no quotes\n3. Wikipedia Search (HTTP) — `https://en.wikipedia.org/w/api.php`, query params: `action=query, format=json, list=search, srsearch={{ $json.text.trim() }}, srlimit=3`\n4. Split Hits (Split Out on `query.search`)\n5. Fetch Summary (HTTP) — `https://en.wikipedia.org/api/rest_v1/page/summary/{{ encodeURIComponent($json.title) }}` — runs once per hit\n6. Aggregate Sources — mode `aggregateAllItemData`, destination `sources`\n\n### B. Synthesise (middle)\n7. Synthesise Briefing (Basic LLM Chain) — IC-style briefing referencing the aggregated sources\n\n### C. Audit + revise (right)\n8. Audit Briefing (Basic LLM Chain) — uses the four policies as audit criteria\n9. Audit Clean? (IF) — checks for a 'compliant' marker in the audit output\n10. Pass: Final (Approved). Fail: Revise → Final (Revised)"
+      }
+    },
+    {
+      "id": "note-policies",
+      "name": "About the policies",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [820, 300],
+      "parameters": {
+        "width": 580,
+        "height": 380,
+        "color": 4,
+        "content": "## The four ICD policies (in `policies/`)\n\n- **ICD-203** — Analytic Standards (objectivity, uncertainty, sourcing, alternatives, clear argumentation)\n- **ICD-206** — Sourcing requirements (SRC, ARC, source descriptors, source summary statements)\n- **ICD-208** — Maximising utility (know your customers, meet standards, tailored re-use)\n- **ICS-206-1** — Citation for PAI / CAI / OSINT / AI-generated content\n\nOpen each file. Read the rules. They use slide-style minimal-tag XML — the same style you saw in lecture.\n\n**For the Audit Briefing prompt:** you can either\n(a) embed a *summary* of the rules inline in the prompt (smaller; faster); or\n(b) embed the full XML of all four policies (more complete; longer prompt; slower).\n\nThe reference uses (a). Try (b) as an extension and compare audit quality."
+      }
+    },
+    {
+      "id": "note-rules",
+      "name": "Rules",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 700],
+      "parameters": {
+        "width": 580,
+        "height": 220,
+        "color": 6,
+        "content": "## Rules\n\n- **No Code node.** Allowed: Set, IF, Split Out, Aggregate, HTTP Request, Basic LLM Chain, Ollama Chat Model.\n- **Three sub-systems, one workflow.** Don't try to split into multiple workflows. The lesson is composition.\n- **Each LLM step has a different prompt style.**\n  - Generate Query: NARROW (one query, no quotes).\n  - Synthesise: COMPOSITE (uses sources, follows IC style requirements).\n  - Audit: GROUNDED (every finding cites a specific rule from the policies).\n  - Revise: COMPOSITE (uses original draft + audit findings).\n- **Read the policies before writing the audit prompt.** You can't ground findings in rules you haven't read."
+      }
+    },
+    {
+      "id": "note-extension",
+      "name": "Extension",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [820, 700],
+      "parameters": {
+        "width": 580,
+        "height": 220,
+        "color": 5,
+        "content": "## Extension — if you finish early\n\n- **Embed full policy XML in the audit prompt.** Read the four `policies/*.xml` files, paste them into the Audit Briefing prompt. Compare audit quality vs. the summary version.\n- **Add a max-attempts counter.** Currently the workflow does at most one revise pass. What if the revise still fails the audit? Real production systems loop with a counter and a graceful giveup.\n- **Replace Wikipedia with a different source.** SearXNG (self-hosted), DuckDuckGo HTML scrape, or a curated list of URLs from a Set node. Same workflow shape; different data source.\n- **Add a SECOND auditor with a different persona** (\"strict editor\" vs. \"helpful proofreader\") and average their findings. Reduces single-LLM noise — the consensus pattern from Ex 06's discussion."
+      }
+    }
+  ],
+  "connections": {},
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

@@ -140,6 +140,12 @@ standards. Here is a non-exhaustive list to validate your agent against
 
 ## Going further
 
+* **Wrap this prompt in a workflow.** [Exercise 07](../07-research-agent-n8n/)
+  takes the audit prompt you just wrote and embeds it as the audit step in an
+  n8n workflow that researches a topic, drafts a briefing, audits its own
+  output against the same four policies, and revises on audit findings. The
+  policies in that exercise are simplified to slide-style XML; the
+  prompt-engineering lesson stays the same.
 * Feed the structured output into an n8n workflow that posts each
   high-severity finding to a Slack channel tagged by rule ID.
 * Replace the sample briefing with one of your own documents (a blog post,

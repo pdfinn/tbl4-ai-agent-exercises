@@ -1,0 +1,248 @@
+{
+  "name": "Ex07 Research Agent — C Reference",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "topic", "value": "Singapore hawker culture and UNESCO recognition", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "genQuery",
+      "name": "Generate Query",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [640, 500],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Output ONE Wikipedia search query that would find authoritative information about the topic. Output the query only — no quotes, no preamble, no explanation. Maximum 8 words.\n\nTopic: {{ $('Set Input').item.json.topic }}"
+      }
+    },
+    {
+      "id": "search",
+      "name": "Wikipedia Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [840, 500],
+      "parameters": {
+        "method": "GET",
+        "url": "https://en.wikipedia.org/w/api.php",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "action", "value": "query" },
+            { "name": "format", "value": "json" },
+            { "name": "list", "value": "search" },
+            { "name": "srsearch", "value": "={{ $json.text.trim() }}" },
+            { "name": "srlimit", "value": "3" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "User-Agent", "value": "tbl4-research-agent/1.0 (Vertical Institute classroom exercise; contact: instructor)" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "split",
+      "name": "Split Hits",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [1040, 500],
+      "parameters": { "fieldToSplitOut": "query.search", "options": {} }
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1240, 500],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://en.wikipedia.org/api/rest_v1/page/summary/{{ encodeURIComponent($json.title) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "User-Agent", "value": "tbl4-research-agent/1.0 (Vertical Institute classroom exercise; contact: instructor)" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "aggregate",
+      "name": "Aggregate Sources",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1440, 500],
+      "parameters": { "aggregate": "aggregateAllItemData", "destinationFieldName": "sources", "include": "allFields" }
+    },
+    {
+      "id": "synthesise",
+      "name": "Synthesise Briefing",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1640, 500],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write an analytic briefing on the topic, using ONLY the sources provided. Style: IC analytic product. Length: 150-250 words.\n\nRequirements:\n- Cite sources using [Source N] inline markers and a numbered Sources section at the end.\n- Express likelihood using one of: almost no chance / very unlikely / unlikely / roughly even chance / likely / very likely / almost certain.\n- Distinguish information from judgment with explicit phrases (\"we assess\", \"we judge\", \"the source reports\").\n- Note one alternative hypothesis where appropriate.\n- Address customer relevance briefly at the end.\n\nTopic: {{ $('Set Input').item.json.topic }}\n\nSources:\n{{ $json.sources.map((s, i) => '[Source ' + (i+1) + '] ' + s.title + ': ' + s.extract).join('\\n\\n') }}"
+      }
+    },
+    {
+      "id": "audit",
+      "name": "Audit Briefing",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1840, 500],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an IC analytic-product auditor. Audit the briefing below against four policies (provided after the briefing). For each rule that is violated or of concern, produce a finding:\n\n- Citation: <ICD-XXX> / <rule name>\n- Severity: violation | concern | compliant\n- Quote: <exact phrase from briefing>\n- Explanation: <why it violates the rule>\n- Fix: <what to change>\n\nOnly flag issues grounded in a specific rule cited verbatim from the policies below. Do NOT invent rules. Do not flag stylistic preferences not in the policies.\n\nIf the briefing is fully compliant, output exactly: COMPLIANT\n\nIf there are findings, list them, then end with one summary line:\nSUMMARY: <N> findings, <V> violations.\n\nBRIEFING:\n{{ $('Synthesise Briefing').item.json.text }}\n\nPOLICIES (simplified):\n\nICD-203 / Analytic Standards. Key rules: objective; independent of political consideration; timely; based on all available sources; expresses-uncertainty (use one likelihood scale; do not mix likelihood with confidence in same sentence); distinguishes-information-from-judgment; analysis-of-alternatives; clear-argumentation; change-or-consistency; accurate-judgments.\n\nICD-206 / Sourcing. Key rules: SRC required when source cited or judgment depends on source; source descriptors describe credibility, bias, age, expertise; source summary statements encouraged for complex products.\n\nICD-208 / Maximising Utility. Key rules: know-your-customers; meet-analytic-standards (per ICD-203); produce-for-tailored-reuse; discoverable-and-accessible; demonstrate-transparency.\n\nICS-206-1 / PAI/CAI/OSINT/AI Citation. Key rules: cite AI when value-added; for generative-AI cite platform AND full prompt text; for classification-models cite model name + precision/recall + training data + version; commercial tools cited if value-added analytics."
+      }
+    },
+    {
+      "id": "gate",
+      "name": "Audit Clean?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [2040, 500],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "g1", "leftValue": "={{ $json.text }}", "rightValue": "COMPLIANT", "operator": { "type": "string", "operation": "contains" } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "approved",
+      "name": "Final (Approved)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2280, 320],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "outcome", "value": "approved-on-first-draft", "type": "string" },
+            { "id": "a2", "name": "topic", "value": "={{ $('Set Input').item.json.topic }}", "type": "string" },
+            { "id": "a3", "name": "briefing", "value": "={{ $('Synthesise Briefing').item.json.text }}", "type": "string" },
+            { "id": "a4", "name": "audit_log", "value": "={{ $('Audit Briefing').item.json.text }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "revise",
+      "name": "Revise Briefing",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [2240, 680],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Revise the briefing below to address every finding from the audit. Maintain length (150-250 words), style (IC analytic product), and source citations. Output the revised briefing only — no preamble.\n\nORIGINAL BRIEFING:\n{{ $('Synthesise Briefing').item.json.text }}\n\nAUDIT FINDINGS:\n{{ $('Audit Briefing').item.json.text }}"
+      }
+    },
+    {
+      "id": "revised",
+      "name": "Final (Revised)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2440, 680],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "r1", "name": "outcome", "value": "revised-after-audit", "type": "string" },
+            { "id": "r2", "name": "topic", "value": "={{ $('Set Input').item.json.topic }}", "type": "string" },
+            { "id": "r3", "name": "briefing", "value": "={{ $('Revise Briefing').item.json.text }}", "type": "string" },
+            { "id": "r4", "name": "audit_log", "value": "={{ $('Audit Briefing').item.json.text }}", "type": "string" },
+            { "id": "r5", "name": "original_briefing", "value": "={{ $('Synthesise Briefing').item.json.text }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1640, 720],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Final lab — all four patterns combined",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 2300,
+        "height": 220,
+        "color": 7,
+        "content": "## Ex 07 — Research Agent (Final Lab)\n\nThis workflow is the integration exercise. It uses **all four patterns** from the slides:\n\n```\nTopic ─→ Generate Query ─→ Wikipedia Search ─→ Split Hits ─→ Fetch Summary  ─→ Aggregate ─→ Synthesise Briefing ─→ Audit Briefing ─→ Audit Clean? ─┬─ yes ─→ Final (Approved)\n         (Chaining)        (HTTP)              (Parallel-ish:    (× 3)         (Aggregate)   (Chaining)             (Evaluator)         (Routing/Gate)    └─ no ─→ Revise → Final (Revised)\n                                                Wikipedia returns                                                                                                  (Optimiser)\n                                                3 hits, each gets\n                                                its own Fetch call)\n```\n\n**Why the audit step is the lesson.** A draft from an LLM is not a finished product. The audit step encodes a *policy* — the four ICD standards in `policies/` — and refuses to let non-compliant output through. The same shape applies to any organisation with a published style guide, brand voice, regulatory standard, or quality bar."
+      }
+    },
+    {
+      "id": "note-policies",
+      "name": "Where the policies live",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1820, 280],
+      "parameters": {
+        "width": 480,
+        "height": 200,
+        "color": 4,
+        "content": "## The audit step\n\nThe Audit Briefing prompt embeds a *summary* of the four ICD policies. Full policy XML lives in `policies/ICD-203.xml`, `ICD-206.xml`, `ICD-208.xml`, `ICS-206-1.xml`.\n\nRead them. Compare to the prompt summary. The summary captures the rule names that the auditor LLM uses to ground its findings.\n\nFor a more thorough audit, paste the full XML of all four policies into the Audit Briefing prompt instead of the summary. Tradeoff: latency goes up, accuracy goes up."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": { "main": [[{ "node": "Generate Query", "type": "main", "index": 0 }]] },
+    "Generate Query": { "main": [[{ "node": "Wikipedia Search", "type": "main", "index": 0 }]] },
+    "Wikipedia Search": { "main": [[{ "node": "Split Hits", "type": "main", "index": 0 }]] },
+    "Split Hits": { "main": [[{ "node": "Fetch Summary", "type": "main", "index": 0 }]] },
+    "Fetch Summary": { "main": [[{ "node": "Aggregate Sources", "type": "main", "index": 0 }]] },
+    "Aggregate Sources": { "main": [[{ "node": "Synthesise Briefing", "type": "main", "index": 0 }]] },
+    "Synthesise Briefing": { "main": [[{ "node": "Audit Briefing", "type": "main", "index": 0 }]] },
+    "Audit Briefing": { "main": [[{ "node": "Audit Clean?", "type": "main", "index": 0 }]] },
+    "Audit Clean?": {
+      "main": [
+        [{ "node": "Final (Approved)", "type": "main", "index": 0 }],
+        [{ "node": "Revise Briefing", "type": "main", "index": 0 }]
+      ]
+    },
+    "Revise Briefing": { "main": [[{ "node": "Final (Revised)", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": {
+      "ai_languageModel": [[
+        { "node": "Generate Query", "type": "ai_languageModel", "index": 0 },
+        { "node": "Synthesise Briefing", "type": "ai_languageModel", "index": 0 },
+        { "node": "Audit Briefing", "type": "ai_languageModel", "index": 0 },
+        { "node": "Revise Briefing", "type": "ai_languageModel", "index": 0 }
+      ]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

@@ -1,0 +1,193 @@
+<policy>
+<identifier>ICS-206-1</identifier>
+<title>Citation and Reference for Publicly Available Information, Commercially Available Information, and Open Source Intelligence</title>
+
+<purpose>
+Extends ICD-206 with citation conventions specific to Publicly Available
+Information (PAI), Commercially Available Information (CAI), Open Source
+Intelligence (OSINT), and AI-generated content. Governs how these source
+types appear in disseminated and covered analytic products.
+</purpose>
+
+<section>
+<heading>SRC formatting conventions</heading>
+
+<rule>
+<name>Pipe separator</name>
+<text>Separate SRC metadata fields with a pipe character.</text>
+</rule>
+
+<rule>
+<name>Descriptor placement</name>
+<text>Place the source descriptor in the last piped section. Use commas to separate concepts within the descriptor.</text>
+</rule>
+
+<rule>
+<name>Default to descriptive SRCs</name>
+<text>
+Default to descriptive SRCs that support discovery and reproducibility.
+Generic SRCs are the exception, used only when there are evidence-based
+security concerns (such as risk of behaviour change or diminished source
+access).
+</text>
+</rule>
+
+</section>
+
+<section>
+<heading>Body elements (in product text)</heading>
+
+<rule>
+<name>OSINT analysis producer</name>
+<text>
+Identify the internal IC entity that created or wrote the analysis, which may
+be distinct from the entity that collected the data. Use the "OSINT Analysis
+by [element]" tagline when the content represents the element's coordinated
+analytic position (for example: "we assess", "OSINT reveals",
+thesis-driven argumentation). Do not use this tagline for data gathering,
+translation, repackaging, or curation alone.
+</text>
+</rule>
+
+<rule>
+<name>External author</name>
+<text>
+Cite the external author of the source content, distinct from internal IC
+authorship. If the author is a US Person, follow applicable masking rules and
+IC element guidelines.
+</text>
+</rule>
+
+<rule>
+<name>Data host</name>
+<text>
+State the URL of the source, the collection tool used, the third-party data
+or analytics service provider, or a placeholder number (coordinated with the
+IC OSINT Executive) when sensitivity prevents direct citation.
+</text>
+</rule>
+
+</section>
+
+<section>
+<heading>Source descriptor elements</heading>
+
+<rule>
+<name>Credibility and bias (required)</name>
+<text>
+Provide a brief description of the source's credibility, biases, and quality
+of information. This element is required.
+</text>
+</rule>
+
+<rule>
+<name>Collector</name>
+<text>Identify the entity that researched, gathered, or collected the data.</text>
+</rule>
+
+<rule>
+<name>Commercial database</name>
+<text>
+State the name of the database, relevant technical or content information,
+and whether a login was required.
+</text>
+</rule>
+
+<rule>
+<name>Commercial tool</name>
+<text>
+Name the tool or data service used. The tool MUST be cited if it provided
+judgment calls, recommendations, inferences, or predictions ("value-added
+analytics"), especially when AI, machine-learning, or computer-vision
+assisted. Traditional programming functions (search, summation, keyword
+alerting, spreadsheet-like functions) do not require notation.
+</text>
+</rule>
+
+</section>
+
+<section>
+<heading>AI citation</heading>
+
+<rule>
+<name>Cite AI systems when value-added</name>
+<text>
+Cite any AI system used for collection or analysis whenever it contributes
+judgment, inference, or value-added analytics to the product.
+</text>
+</rule>
+
+<rule>
+<name>Classification or detection model</name>
+<text>
+For AI systems that classify or detect (for example: a computer-vision system
+finding construction equipment in imagery), cite all of the following:
+system type; model name; brief non-technical explanation of what the system
+does; accuracy as precision and recall percentages; relevant system settings;
+relevant training-data information; software version number; GitHub or
+software code link if open-source; and date of use.
+</text>
+</rule>
+
+<rule>
+<name>Generative AI</name>
+<text>
+For generative AI outputs (which are stochastic — the same prompt may produce
+different outputs on different runs), cite at minimum: the platform or model
+used; and the full prompt text. Documenting these base elements is essential
+for reproducibility.
+</text>
+</rule>
+
+</section>
+
+<section>
+<heading>Retention</heading>
+
+<rule>
+<name>Dynamic PAI or CAI</name>
+<text>
+If an externally-created PAI or CAI source is dynamic and important to the
+bottom-line message, preserve a record (for example: a screenshot) for at
+least one year. Follow the IC element's NARA-approved Records Control
+Schedule; the RCS prevails in conflict.
+</text>
+</rule>
+
+<rule>
+<name>Time-horizon retention</name>
+<text>
+For long-horizon products (for example: National Intelligence Estimates),
+retain PAI or CAI source citations for the product's time horizon or five
+years, whichever is shorter.
+</text>
+</rule>
+
+</section>
+
+<section>
+<heading>Definitions</heading>
+
+<definition>
+<term>Artificial Intelligence</term>
+<meaning>A machine-based system that can, for a given set of human-defined objectives, make predictions, recommendations, or decisions influencing real or virtual environments.</meaning>
+</definition>
+
+<definition>
+<term>Publicly Available Information (PAI)</term>
+<meaning>Information that has been published or broadcast for public consumption, is available on request to the public, is accessible online, or could be seen or heard by any casual observer.</meaning>
+</definition>
+
+<definition>
+<term>Commercially Available Information (CAI)</term>
+<meaning>Data or information customarily sold, leased, or licensed to the general public or to non-governmental entities, including data provided voluntarily to the government by corporate entities.</meaning>
+</definition>
+
+<definition>
+<term>Open Source Intelligence (OSINT)</term>
+<meaning>Intelligence derived exclusively from publicly or commercially available information that addresses specific intelligence priorities, requirements, or gaps.</meaning>
+</definition>
+
+</section>
+
+</policy>

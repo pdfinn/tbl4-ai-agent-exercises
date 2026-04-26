@@ -1,0 +1,80 @@
+{
+  "name": "Ex03 Prompt Chaining — A Blank Starter",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "parameters": {}
+    },
+    {
+      "id": "note-pattern",
+      "name": "The pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1100,
+        "height": 200,
+        "color": 7,
+        "content": "## Exercise 03 — Prompt Chaining\n\n**The pattern (from the slides):**\n```\nInput → AI Node 1 → Quality Gate ─┬─ pass ─→ AI Node 2 → Output\n                                   └─ fail ─→ Exit (or retry)\n```\n\nBuild a two-step content pipeline: summarise an article, gate the summary on word count, then translate. If the summary is over 100 words, take the failure branch (retry with a stricter prompt OR exit cleanly — your choice)."
+      }
+    },
+    {
+      "id": "note-task",
+      "name": "Your task",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 280],
+      "parameters": {
+        "width": 540,
+        "height": 280,
+        "color": 4,
+        "content": "## Build it\n\n**Inputs you'll need (use a Set node):**\n- `article` — a 200-300 word block of text\n- `target_language` — French, Mandarin, Tamil — your choice\n\n**Nodes you'll need:**\n- Manual Trigger (provided)\n- Set — put the inputs in fields you can reference downstream\n- Basic LLM Chain × 2 or × 3 — summarise, optional re-summarise, translate\n- Ollama Chat Model — sub-node feeding the Chains via `ai_languageModel`\n- IF — the quality gate\n\n**Model:** `llama3.1:8b`. Credential: `Ollama (local)`."
+      }
+    },
+    {
+      "id": "note-gate",
+      "name": "How to count words in n8n",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [760, 280],
+      "parameters": {
+        "width": 540,
+        "height": 280,
+        "color": 4,
+        "content": "## Counting words in an IF node\n\nThe **left value** of your IF gate counts words from the previous node's text output. Use this expression:\n\n```\n={{ $json.text.split(/\\s+/).filter(w => w.length > 0).length }}\n```\n\nWhat it does: split the text on whitespace, drop empty pieces, count what's left. The `=` makes it an expression. The `{{ ... }}` is the n8n expression bracket. Inside is plain JavaScript.\n\n**Operator:** *Less than or equal to* (number).\n\n**Right value:** your threshold (e.g. `100`)."
+      }
+    },
+    {
+      "id": "note-rules",
+      "name": "Rules",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 580],
+      "parameters": {
+        "width": 540,
+        "height": 200,
+        "color": 6,
+        "content": "## Rules\n\n- **No Code node.** Allowed: HTTP, Set, IF, Basic LLM Chain, Ollama Chat Model.\n- **Sketch first.** Draw the graph on paper. Where does the IF's pass branch go? Where does fail go? Do they ever meet?\n- **One Ollama Chat Model node** can feed multiple Chains via `ai_languageModel`. You don't need three.\n- **Run after every node you add.** Read the output panel before extending the chain."
+      }
+    },
+    {
+      "id": "note-extension",
+      "name": "Extension",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [760, 580],
+      "parameters": {
+        "width": 540,
+        "height": 200,
+        "color": 5,
+        "content": "## Extension — if you finish early\n\n- **Tighten the gate.** Add a second condition: also fail if the summary contains more than two sentences. Compose conditions with the IF node's *AND*.\n- **Multiple gates.** Chain three LLM calls: summarise → check → translate → check (translation is good?) → format. Patterns compose.\n- **Replace Manual Trigger with a Form Trigger.** Now anyone with the URL can paste an article and get a translated summary back."
+      }
+    }
+  ],
+  "connections": {},
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

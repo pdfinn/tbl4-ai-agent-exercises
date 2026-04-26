@@ -1,0 +1,150 @@
+{
+  "name": "Ex04 Routing — B Half-Built (find the 3 gaps)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 400],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 400],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "customer_message", "value": "Hi team, my last invoice charged me twice for the Pro subscription. Order #A-2438. Can you sort this out and refund the duplicate? Thanks.", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "classify",
+      "name": "Classify",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [640, 400],
+      "parameters": { "promptType": "define", "text": "" }
+    },
+    {
+      "id": "switch",
+      "name": "Route",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [840, 400],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                "conditions": [{ "id": "r1", "leftValue": "={{ $json.text.trim() }}", "rightValue": "BILLING", "operator": { "type": "string", "operation": "contains" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "BILLING"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                "conditions": [{ "id": "r2", "leftValue": "={{ $json.text.trim() }}", "rightValue": "TECHNICAL", "operator": { "type": "string", "operation": "contains" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "TECHNICAL"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                "conditions": [{ "id": "r3", "leftValue": "={{ $json.text.trim() }}", "rightValue": "", "operator": { "type": "string", "operation": "contains" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "GENERAL"
+            }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      }
+    },
+    {
+      "id": "billing",
+      "name": "Handle Billing",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1080, 200],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a billing-support specialist. The customer has a billing-related issue. Acknowledge the issue, ask for any missing information (account email, order number, screenshot), and propose a concrete next step. Be warm but precise. 3-5 sentences.\n\nMessage:\n{{ $('Set Input').item.json.customer_message }}"
+      }
+    },
+    {
+      "id": "technical",
+      "name": "Handle Technical",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1080, 400],
+      "parameters": { "promptType": "define", "text": "" }
+    },
+    {
+      "id": "general",
+      "name": "Handle General",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1080, 600],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a friendly general-support representative. The customer has a question that's not clearly billing or technical — likely sales, pricing, or general info. Acknowledge their query, offer concrete information if you can, and suggest a relevant next step. Be warm and concise. 3-5 sentences.\n\nMessage:\n{{ $('Set Input').item.json.customer_message }}"
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [840, 720],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-gaps",
+      "name": "Gaps",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1200,
+        "height": 220,
+        "color": 5,
+        "content": "## Half-Built — 3 gaps\n\n1. **Classify → prompt** is blank. Write a *narrow and specific* prompt (slide style) that returns EXACTLY ONE WORD: `BILLING`, `TECHNICAL`, or `GENERAL`. Tell the model what each category means. Tell it not to explain. Tell it not to add punctuation. Reference the message via `{{ $('Set Input').item.json.customer_message }}`.\n2. **Route → GENERAL rule rightValue** is blank. Set it so messages classified as the third category route to the third branch. (Hint: the `outputKey` for that branch is already named.)\n3. **Handle Technical → prompt** is blank. Write a specialist prompt for a technical-support agent: ask for the right diagnostic info, offer a workaround when possible, be calm and methodical.\n\n**Rule:** no Code node. The pattern is *Routing* — same as the slide.\n\n**Try the workflow with three different inputs** (in Set Input) to see all three branches fire:\n- Billing: \"I was charged twice for my subscription\"\n- Technical: \"The app crashes when I upload a file\"\n- General: \"Do you offer enterprise plans?\""
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": { "main": [[{ "node": "Classify", "type": "main", "index": 0 }]] },
+    "Classify": { "main": [[{ "node": "Route", "type": "main", "index": 0 }]] },
+    "Route": {
+      "main": [
+        [{ "node": "Handle Billing", "type": "main", "index": 0 }],
+        [{ "node": "Handle Technical", "type": "main", "index": 0 }],
+        [{ "node": "Handle General", "type": "main", "index": 0 }]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [[
+        { "node": "Classify", "type": "ai_languageModel", "index": 0 },
+        { "node": "Handle Billing", "type": "ai_languageModel", "index": 0 },
+        { "node": "Handle Technical", "type": "ai_languageModel", "index": 0 },
+        { "node": "Handle General", "type": "ai_languageModel", "index": 0 }
+      ]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

@@ -1,0 +1,91 @@
+{
+  "name": "Ex00 Stage 3 — Email the Answer",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {}
+    },
+    {
+      "id": "http",
+      "name": "Get Forecast",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [460, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.data.gov.sg/v1/environment/2-hour-weather-forecast",
+        "options": {}
+      }
+    },
+    {
+      "id": "chain",
+      "name": "Ask the AI",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [680, 300],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Based on this Singapore weather data, do I need an umbrella if I'm going to Raffles Place in the next two hours? Answer in one sentence.\n\nData:\n{{ JSON.stringify($json) }}"
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [680, 480],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "email",
+      "name": "Email Me",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [900, 300],
+      "parameters": {
+        "fromEmail": "your-email@example.com",
+        "toEmail": "your-email@example.com",
+        "subject": "Umbrella check",
+        "emailFormat": "text",
+        "text": "={{ $json.text }}"
+      }
+    },
+    {
+      "id": "note-goal",
+      "name": "Goal",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 80],
+      "parameters": {
+        "width": 900,
+        "height": 160,
+        "color": 7,
+        "content": "## Stage 3 — Email the answer to yourself\n\nOne new node: **Email Me**. The LLM's answer goes into the email body via `{{ $json.text }}`.\n\nThis is your first **end-to-end automation** — data → AI reasoning → message in your inbox. Every later exercise is a variation on this shape."
+      }
+    },
+    {
+      "id": "note-setup",
+      "name": "Gmail setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [880, 80],
+      "parameters": {
+        "width": 380,
+        "height": 220,
+        "color": 3,
+        "content": "⚠️ **First time using email? Three steps:**\n\n1. Enable 2-Step Verification on your Gmail at `myaccount.google.com/security`.\n2. Generate an App Password at `myaccount.google.com/apppasswords`. Copy the 16-character code.\n3. In the Email Me node: replace the `your-email@example.com` placeholders with your Gmail. Create a new SMTP credential — user: your Gmail address, password: the App Password (not your Gmail login)."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Get Forecast", "type": "main", "index": 0 }]] },
+    "Get Forecast": { "main": [[{ "node": "Ask the AI", "type": "main", "index": 0 }]] },
+    "Ask the AI": { "main": [[{ "node": "Email Me", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Ask the AI", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

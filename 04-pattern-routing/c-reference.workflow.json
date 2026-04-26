@@ -1,0 +1,156 @@
+{
+  "name": "Ex04 Routing — C Reference",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 400],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 400],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "customer_message", "value": "Hi team, my last invoice charged me twice for the Pro subscription. Order #A-2438. Can you sort this out and refund the duplicate? Thanks.", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "classify",
+      "name": "Classify",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [640, 400],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a customer support classifier. Read the message and respond with EXACTLY ONE WORD from this list: BILLING, TECHNICAL, or GENERAL.\n\nRules:\n- BILLING = anything about charges, refunds, invoices, subscriptions, plans, payments\n- TECHNICAL = bugs, errors, crashes, performance, integration questions\n- GENERAL = pricing inquiries, sales questions, anything else\n- If unsure, choose GENERAL.\n- Do not explain. Do not add punctuation. Output one word, in capitals.\n\nMessage:\n{{ $('Set Input').item.json.customer_message }}"
+      }
+    },
+    {
+      "id": "switch",
+      "name": "Route",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [840, 400],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                "conditions": [{ "id": "r1", "leftValue": "={{ $json.text.trim() }}", "rightValue": "BILLING", "operator": { "type": "string", "operation": "contains" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "BILLING"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                "conditions": [{ "id": "r2", "leftValue": "={{ $json.text.trim() }}", "rightValue": "TECHNICAL", "operator": { "type": "string", "operation": "contains" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "TECHNICAL"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose", "version": 2 },
+                "conditions": [{ "id": "r3", "leftValue": "={{ $json.text.trim() }}", "rightValue": "GENERAL", "operator": { "type": "string", "operation": "contains" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "GENERAL"
+            }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      }
+    },
+    {
+      "id": "billing",
+      "name": "Handle Billing",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1080, 200],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a billing-support specialist. The customer has a billing-related issue. Acknowledge the issue, ask for any missing information (account email, order number, screenshot), and propose a concrete next step. Be warm but precise. 3-5 sentences.\n\nMessage:\n{{ $('Set Input').item.json.customer_message }}"
+      }
+    },
+    {
+      "id": "technical",
+      "name": "Handle Technical",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1080, 400],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a technical-support specialist. The customer has a technical issue. Ask for the specific information needed to debug (browser version, OS, exact error message, steps to reproduce), and offer a temporary workaround if you can think of one. Be calm and methodical. 4-6 sentences.\n\nMessage:\n{{ $('Set Input').item.json.customer_message }}"
+      }
+    },
+    {
+      "id": "general",
+      "name": "Handle General",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1080, 600],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a friendly general-support representative. The customer has a question that's not clearly billing or technical — likely sales, pricing, or general info. Acknowledge their query, offer concrete information if you can, and suggest a relevant next step. Be warm and concise. 3-5 sentences.\n\nMessage:\n{{ $('Set Input').item.json.customer_message }}"
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [840, 720],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1200,
+        "height": 200,
+        "color": 7,
+        "content": "## Pattern: Routing (Reference)\n\nOne LLM classifies the input; a Switch dispatches to specialised branches. Each branch has its own prompt tuned for that category.\n\n```\nMessage → Classify (LLM, one-word output) → Switch ─┬─ BILLING ──→ Billing specialist (LLM)\n                                                    ├─ TECHNICAL → Technical specialist (LLM)\n                                                    └─ GENERAL ──→ General specialist (LLM)\n```\n\n**Why a one-word output:** the Switch needs a deterministic value to route on. \"BILLING\" routes cleanly; \"This sounds like a billing issue\" doesn't. The classifier prompt is *narrow and specific* — that's what the slides mean by a workflow-agent prompt."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": { "main": [[{ "node": "Classify", "type": "main", "index": 0 }]] },
+    "Classify": { "main": [[{ "node": "Route", "type": "main", "index": 0 }]] },
+    "Route": {
+      "main": [
+        [{ "node": "Handle Billing", "type": "main", "index": 0 }],
+        [{ "node": "Handle Technical", "type": "main", "index": 0 }],
+        [{ "node": "Handle General", "type": "main", "index": 0 }]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [[
+        { "node": "Classify", "type": "ai_languageModel", "index": 0 },
+        { "node": "Handle Billing", "type": "ai_languageModel", "index": 0 },
+        { "node": "Handle Technical", "type": "ai_languageModel", "index": 0 },
+        { "node": "Handle General", "type": "ai_languageModel", "index": 0 }
+      ]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

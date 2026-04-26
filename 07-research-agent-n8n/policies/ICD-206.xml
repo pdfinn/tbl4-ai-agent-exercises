@@ -1,0 +1,158 @@
+<policy>
+<identifier>ICD-206</identifier>
+<title>Sourcing Requirements for Disseminated Analytic Products</title>
+
+<purpose>
+Every covered analytic product shall contain sourcing information so readers
+can assess the quality and credibility of sources and locate the originals.
+Sourcing is presented through four mechanisms: Source Reference Citations,
+Appended Reference Citations, Source Descriptors, and Source Summary
+Statements. Analysts should combine these mechanisms to optimise clarity.
+</purpose>
+
+<section>
+<heading>Source Reference Citation (SRC)</heading>
+
+<rule>
+<name>SRC required when source is cited or judgment depends on source</name>
+<text>
+A Source Reference Citation is a sequentially numbered endnote that correlates
+to a superscript number in the body of the analytic product. An SRC is
+required whenever a source is directly cited in the product text, or whenever
+a specific aspect of analysis (judgment, assessment, estimate, alternative
+hypothesis, or confidence level) depends on a source.
+</text>
+</rule>
+
+<rule>
+<name>SRC originality</name>
+<text>
+Reference the most original source that presents the relevant information in
+a form appropriate for analysis.
+</text>
+</rule>
+
+<rule>
+<name>SRC relevance</name>
+<text>
+The relevance of a source should be apparent if a reader consults it directly;
+otherwise the product text must explain the source's pertinence.
+</text>
+</rule>
+
+<rule>
+<name>SRC required elements</name>
+<text>
+Each SRC must include: portion marking presenting the classification;
+identification of the information originator, author, producer, or owner; an
+unambiguous source identifier enabling efficient location and retrieval; a
+title (with volume or issue number if applicable); date of issuance,
+publication, posting, or online access if unknown; page number if applicable;
+classification of the extracted information; and overall classification of
+the source document. A source descriptor may be included; if it differs from
+the body, the portion marking must still be included.
+</text>
+</rule>
+
+</section>
+
+<section>
+<heading>Appended Reference Citation (ARC)</heading>
+
+<rule>
+<name>ARC for supplementary information</name>
+<text>
+An Appended Reference Citation is for information that relates to analysis in
+a supplemental or complementary way but does not expressly affect or support a
+specific aspect or outcome of analysis. ARCs are optional. If included, list
+ARCs separately from and after SRCs. Do not include ARCs solely to delineate
+the overall scope of analytic inquiry.
+</text>
+</rule>
+
+</section>
+
+<section>
+<heading>Source Descriptor</heading>
+
+<rule>
+<name>Source descriptor placement and content</name>
+<text>
+A source descriptor is a brief narrative about factors affecting the quality
+or credibility of a single source: accuracy, completeness, potential bias,
+relevance, age, expertise, motivation. It should appear in the main body; if
+not, it shall appear in the SRC. Use a source descriptor to describe
+qualitative factors germane to specific judgments, or when the time of the
+pertinent information differs significantly from the time of publication. For
+a directly-cited source, the descriptor should also appear in the text,
+clearly associated with the source.
+</text>
+</rule>
+
+</section>
+
+<section>
+<heading>Source Summary Statement</heading>
+
+<rule>
+<name>Source summary statement encouraged for complex products</name>
+<text>
+A source summary statement is a holistic assessment of the sourcing that
+supports the product as a whole. Importance increases with product
+complexity, source complexity, or the number of sources cited. A source
+summary statement should cover: strengths and weaknesses of the source base;
+which sources are most critical to key judgments; sources that are
+corroborative or conflicting; and any specific subject-matter expertise
+utilised.
+</text>
+</rule>
+
+</section>
+
+<section>
+<heading>Source retention</heading>
+
+<rule>
+<name>Dynamic and ephemeral sources</name>
+<text>
+For sources that are dynamic (e.g. an internet posting), ephemeral (e.g. an
+analyst phone conversation), or not subject to systematic storage, preserve a
+record of the source for at least one year.
+</text>
+</rule>
+
+<rule>
+<name>Time-horizon retention</name>
+<text>
+For products with a specified time horizon, retain source information for the
+time horizon or five years, whichever is shorter.
+</text>
+</rule>
+
+<rule>
+<name>Record copy</name>
+<text>
+Retain the covered analytic product, with all sourcing information, as a
+document of record, along with any downgraded, sanitised, or tearline
+versions.
+</text>
+</rule>
+
+</section>
+
+<section>
+<heading>Definitions</heading>
+
+<definition>
+<term>Source</term>
+<meaning>An originator or discrete parcel of data or information that contributes to, affects, or is used to evaluate intelligence analysis. A source can be a person, document, quotation, data record, database, social-media post, email, book, or web page.</meaning>
+</definition>
+
+<definition>
+<term>Sourcing information</term>
+<meaning>The combined set of SRCs, ARCs, source descriptors, and source summary statements presented in a covered analytic product.</meaning>
+</definition>
+
+</section>
+
+</policy>

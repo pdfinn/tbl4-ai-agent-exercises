@@ -1,0 +1,63 @@
+{
+  "name": "Ex00 Stage 1 — Say Hello",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {}
+    },
+    {
+      "id": "chain",
+      "name": "Ask the AI",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [460, 300],
+      "parameters": {
+        "promptType": "define",
+        "text": "Suggest three hawker dishes a visitor to Singapore should try. One sentence each."
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [460, 480],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-goal",
+      "name": "Goal",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 80],
+      "parameters": {
+        "width": 560,
+        "height": 160,
+        "color": 7,
+        "content": "## Stage 1 — Say Hello\n\nClick *Execute Workflow*. A local AI model gets the prompt. You get three hawker dish suggestions.\n\n**That's it.** No data sources, no extraction — just confirming that n8n can talk to your local LLM.\n\nLook at the **output panel** on the *Ask the AI* node to see the response."
+      }
+    },
+    {
+      "id": "note-cold",
+      "name": "Cold start",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [460, 640],
+      "parameters": {
+        "width": 380,
+        "height": 140,
+        "color": 3,
+        "content": "⚠️ **First run is slow.** Ollama takes 20–40 seconds to load the model the first time. After that, responses take 1–3 seconds.\n\nCheck the **Ollama (local)** credential is selected on this node."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Ask the AI", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Ask the AI", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

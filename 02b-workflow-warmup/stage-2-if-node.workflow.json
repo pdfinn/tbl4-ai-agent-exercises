@@ -1,0 +1,111 @@
+{
+  "name": "Ex02b Stage 2 — The IF Node",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 400],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Mood",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 400],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "mood", "value": "happy", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "gate",
+      "name": "Is happy?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [640, 400],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [
+            { "id": "g1", "leftValue": "={{ $json.mood }}", "rightValue": "happy", "operator": { "type": "string", "operation": "equals" } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "happy",
+      "name": "Happy Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [880, 280],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "h1", "name": "message", "value": "Glad you're feeling happy. Keep it up!", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "sad",
+      "name": "Sad Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [880, 520],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "s1", "name": "message", "value": "Cheer up. Things will get better.", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "note-goal",
+      "name": "Stage 2 — The IF node and binary routing",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1000,
+        "height": 200,
+        "color": 7,
+        "content": "## Stage 2 — The IF node and binary routing\n\nFive nodes. The IF compares the upstream `mood` field against the literal `\"happy\"` and routes to one of two branches.\n\n**What this stage drills:**\n- The IF node — left value, right value, operator. The `options.version: 2` field is required (n8n quirk).\n- *Binary routing*: an IF node has TWO outputs. Top output = true branch. Bottom = false branch.\n- *Two terminal nodes*: each branch ends at a different Set node. Which one runs depends on the IF's decision.\n- *Try both paths*: change `mood` in *Set Mood* to anything other than `happy` and re-run. Watch the false branch fire instead."
+      }
+    },
+    {
+      "id": "note-test",
+      "name": "Test both branches",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [880, 700],
+      "parameters": {
+        "width": 360,
+        "height": 160,
+        "color": 4,
+        "content": "## Don't trust an IF you've only run once\n\nA workflow with an IF that you've only tested in one direction is half-tested. Always run with each input that exercises a different branch.\n\nFor this stage: run with `mood: happy`, then change to `mood: sad` (or anything else), run again."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Mood", "type": "main", "index": 0 }]] },
+    "Set Mood": { "main": [[{ "node": "Is happy?", "type": "main", "index": 0 }]] },
+    "Is happy?": {
+      "main": [
+        [{ "node": "Happy Response", "type": "main", "index": 0 }],
+        [{ "node": "Sad Response", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

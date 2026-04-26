@@ -1,0 +1,127 @@
+{
+  "name": "Ex05 Parallelisation — C Reference",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "document", "value": "Date: 2026-04-15. To all hawker stallholders at Maxwell Food Centre. Following last week's town hall, we have agreed three changes effective from May 1st. First, the rental subsidy for new entrants under 35 will be raised from 25% to 40% for the first 12 months. Second, the centralised dishwashing trial that began in February has been disappointing — throughput dropped during peak hours and several stallholders, including Mr Tan from stall 23 and Mdm Lim from stall 41, reported plate quality issues. The trial will end on April 30th. Third, NEA will install free-flowing tap water dispensers in three locations on the ground floor; this is a customer-comfort measure, not a replacement for paid drinks. Operational concerns and feedback should be directed to the centre manager, Mr Anand Chandra. We thank stallholders for their continued patience during the trial period.", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "summarise",
+      "name": "Summarise",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [680, 280],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Summarise this document in two sentences. Focus on the key decisions and changes. Output the summary only — no preamble.\n\nDocument:\n{{ $('Set Input').item.json.document }}"
+      }
+    },
+    {
+      "id": "entities",
+      "name": "Extract Entities",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [680, 500],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Extract named entities from this document and group them by type. Use this exact format — nothing else:\n\nPeople: <comma-separated list, or \"none\">\nPlaces: <comma-separated list, or \"none\">\nOrganisations: <comma-separated list, or \"none\">\nDates: <comma-separated list, or \"none\">\n\nDocument:\n{{ $('Set Input').item.json.document }}"
+      }
+    },
+    {
+      "id": "sentiment",
+      "name": "Classify Sentiment",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [680, 720],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Classify the overall sentiment of this document as exactly one word: POSITIVE, NEUTRAL, or NEGATIVE. No explanation, no punctuation, no preamble.\n\nDocument:\n{{ $('Set Input').item.json.document }}"
+      }
+    },
+    {
+      "id": "merge",
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [920, 500],
+      "parameters": { "mode": "combine", "combineBy": "combineByPosition", "options": {}, "numberInputs": 3 }
+    },
+    {
+      "id": "compose",
+      "name": "Compose Report",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "r1", "name": "report", "value": "=# Document analysis report\n\n## Summary\n{{ $('Summarise').item.json.text }}\n\n## Entities\n{{ $('Extract Entities').item.json.text }}\n\n## Sentiment\n**{{ $('Classify Sentiment').item.json.text.trim() }}**\n", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [680, 920],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1100,
+        "height": 200,
+        "color": 7,
+        "content": "## Pattern: Parallelisation (Reference)\n\nSplit a task into independent sub-tasks, run them in parallel, merge the results.\n\n```\nDocument ─┬─→ Summarise        ─┐\n          ├─→ Extract Entities  ┼─→ Merge ─→ Compose Report\n          └─→ Classify Sentiment┘\n```\n\nThree LLM calls run in parallel. Each gets the same input but does its own thing. The Merge node collects the three results into one item; the Compose Report node assembles them into a Markdown document via cross-node references."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": {
+      "main": [[
+        { "node": "Summarise", "type": "main", "index": 0 },
+        { "node": "Extract Entities", "type": "main", "index": 0 },
+        { "node": "Classify Sentiment", "type": "main", "index": 0 }
+      ]]
+    },
+    "Summarise": { "main": [[{ "node": "Merge Results", "type": "main", "index": 0 }]] },
+    "Extract Entities": { "main": [[{ "node": "Merge Results", "type": "main", "index": 1 }]] },
+    "Classify Sentiment": { "main": [[{ "node": "Merge Results", "type": "main", "index": 2 }]] },
+    "Merge Results": { "main": [[{ "node": "Compose Report", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": {
+      "ai_languageModel": [[
+        { "node": "Summarise", "type": "ai_languageModel", "index": 0 },
+        { "node": "Extract Entities", "type": "ai_languageModel", "index": 0 },
+        { "node": "Classify Sentiment", "type": "ai_languageModel", "index": 0 }
+      ]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

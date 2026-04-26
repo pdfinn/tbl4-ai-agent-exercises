@@ -1,0 +1,71 @@
+<policy>
+<identifier>ICD-208</identifier>
+<title>Maximising the Utility of Analytic Products</title>
+
+<purpose>
+IC elements shall produce analytic products that customers can easily
+discover, access, use, and disseminate. Five principles, listed in priority
+order from highest to lowest.
+</purpose>
+
+<section>
+<heading>Principles in priority order</heading>
+
+<rule>
+<name>Know your customers (priority 1)</name>
+<text>
+Ensure analysts understand the customer's operating environment: required
+information, timeliness, classification limits, and optimal methods for
+discovery and dissemination. Determine before publication whether the product
+targets a specific customer or a general audience.
+</text>
+</rule>
+
+<rule>
+<name>Meet analytic standards (priority 2)</name>
+<text>
+Analytic products must give customers insight into source quality and
+credibility, characterise the uncertainty of judgments, and include context
+to aid understanding. All products shall adhere to the standards of analytic
+tradecraft in ICD-203.
+</text>
+</rule>
+
+<rule>
+<name>Produce for tailored re-use (priority 3)</name>
+<text>
+Create products for timely dissemination to US customers (federal, state,
+local, tribal) and, where permitted, partners. When similar credible
+information is reported at multiple classification levels, use the lowest
+level to facilitate re-use. Produce tearlines at the lowest classification
+level that protects sensitive data, sources, methods, and activities. All
+analytic products must employ proper sourcing in line with ICD-206. Use
+alternate versions, portion marking, sanitised text, metadata tagging, and
+tearlines to facilitate tailored re-use. Sanitised products must remain
+congruent with their higher-classified versions in facts, judgments,
+confidence levels, and probabilistic language.
+</text>
+</rule>
+
+<rule>
+<name>Make analytic products discoverable and accessible (priority 4)</name>
+<text>
+Ensure that customers with proper clearances and approved mission need can
+discover and access analytic products. At minimum, disseminate products
+electronically to the Library of National Intelligence or its successor
+systems.
+</text>
+</rule>
+
+<rule>
+<name>Demonstrate transparency (priority 5)</name>
+<text>
+Adhere to the Principles of Intelligence Transparency: enhance public
+understanding of intelligence activities while protecting sensitive sources
+and methods.
+</text>
+</rule>
+
+</section>
+
+</policy>
