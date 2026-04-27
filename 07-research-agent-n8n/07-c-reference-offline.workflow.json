@@ -1,0 +1,179 @@
+{
+  "name": "Ex07 Research Agent — C Reference (Offline)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "topic", "value": "Singapore hawker culture and UNESCO recognition", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "mock",
+      "name": "Load Mock Sources",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [640, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "m1",
+              "name": "sources",
+              "value": "=[\n  {\n    \"title\": \"Hawker culture in Singapore\",\n    \"extract\": \"Singapore's hawker culture refers to food prepared and sold from individual stalls in publicly-managed food courts known as hawker centres. The tradition originated with itinerant street vendors in the 19th and 20th centuries; the National Environment Agency began consolidating them into purpose-built food centres from the 1970s. In December 2020, UNESCO inscribed Hawker Culture in Singapore on its Representative List of the Intangible Cultural Heritage of Humanity, following a multi-year nomination effort by the National Heritage Board.\"\n  },\n  {\n    \"title\": \"Intangible cultural heritage\",\n    \"extract\": \"The Intangible Cultural Heritage of Humanity, sometimes called the living heritage, is a designation by UNESCO under the 2003 Convention for the Safeguarding of the Intangible Cultural Heritage. The Convention defines intangible heritage as practices, representations, expressions, knowledge, and skills that communities recognise as part of their cultural heritage. As of 2024 the list comprises over 700 elements from more than 140 countries.\"\n  },\n  {\n    \"title\": \"National Environment Agency (Singapore)\",\n    \"extract\": \"The National Environment Agency is a statutory board under the Ministry of Sustainability and the Environment of the Government of Singapore. Established in 2002, the NEA is responsible for environmental policy implementation including air quality monitoring, public cleansing, and the management of approximately 114 hawker centres across the country. The NEA was a key institutional partner in Singapore's successful nomination of hawker culture for UNESCO Intangible Cultural Heritage status in 2020.\"\n  }\n]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "synthesise",
+      "name": "Synthesise Briefing",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [840, 500],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write an analytic briefing on the topic, using ONLY the sources provided. Style: IC analytic product. Length: 150-250 words.\n\nRequirements:\n- Cite sources using [Source N] inline markers and a numbered Sources section at the end.\n- Express likelihood using one of: almost no chance / very unlikely / unlikely / roughly even chance / likely / very likely / almost certain.\n- Distinguish information from judgment with explicit phrases (\"we assess\", \"we judge\", \"the source reports\").\n- Note one alternative hypothesis where appropriate.\n- Address customer relevance briefly at the end.\n\nTopic: {{ $('Set Input').item.json.topic }}\n\nSources:\n{{ $json.sources.map((s, i) => '[Source ' + (i+1) + '] ' + s.title + ': ' + s.extract).join('\\n\\n') }}"
+      }
+    },
+    {
+      "id": "audit",
+      "name": "Audit Briefing",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1040, 500],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an IC analytic-product auditor. Audit the briefing below against four policies. For each rule that is violated or of concern, produce a finding:\n\n- Citation: <ICD-XXX> / <rule name>\n- Severity: violation | concern | compliant\n- Quote: <exact phrase from briefing>\n- Explanation: <why it violates the rule>\n- Fix: <what to change>\n\nOnly flag issues grounded in a specific rule cited verbatim from the policies below. Do NOT invent rules.\n\nIf the briefing is fully compliant, output exactly: COMPLIANT\n\nIf there are findings, list them, then end with one summary line:\nSUMMARY: <N> findings, <V> violations.\n\nBRIEFING:\n{{ $('Synthesise Briefing').item.json.text }}\n\nPOLICIES (simplified):\n\nICD-203 / Analytic Standards. Key rules: objective; independent of political consideration; timely; based on all available sources; expresses-uncertainty; distinguishes-information-from-judgment; analysis-of-alternatives; clear-argumentation.\n\nICD-206 / Sourcing. Key rules: SRC required when source cited or judgment depends on source; source descriptors describe credibility, bias, age, expertise.\n\nICD-208 / Maximising Utility. Key rules: know-your-customers; meet-analytic-standards; produce-for-tailored-reuse.\n\nICS-206-1 / PAI/CAI/OSINT/AI Citation. Key rules: cite AI when value-added; for generative-AI cite platform AND full prompt text."
+      }
+    },
+    {
+      "id": "gate",
+      "name": "Audit Clean?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [1240, 500],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "g1", "leftValue": "={{ $json.text }}", "rightValue": "COMPLIANT", "operator": { "type": "string", "operation": "contains" } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "approved",
+      "name": "Final (Approved)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1480, 320],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "outcome", "value": "approved-on-first-draft", "type": "string" },
+            { "id": "a2", "name": "topic", "value": "={{ $('Set Input').item.json.topic }}", "type": "string" },
+            { "id": "a3", "name": "briefing", "value": "={{ $('Synthesise Briefing').item.json.text }}", "type": "string" },
+            { "id": "a4", "name": "audit_log", "value": "={{ $('Audit Briefing').item.json.text }}", "type": "string" },
+            { "id": "a5", "name": "mode", "value": "offline (mock sources)", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "revise",
+      "name": "Revise Briefing",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1440, 680],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Revise the briefing below to address every finding from the audit. Maintain length (150-250 words), style (IC analytic product), and source citations. Output the revised briefing only — no preamble.\n\nORIGINAL BRIEFING:\n{{ $('Synthesise Briefing').item.json.text }}\n\nAUDIT FINDINGS:\n{{ $('Audit Briefing').item.json.text }}"
+      }
+    },
+    {
+      "id": "revised",
+      "name": "Final (Revised)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1640, 680],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "r1", "name": "outcome", "value": "revised-after-audit", "type": "string" },
+            { "id": "r2", "name": "topic", "value": "={{ $('Set Input').item.json.topic }}", "type": "string" },
+            { "id": "r3", "name": "briefing", "value": "={{ $('Revise Briefing').item.json.text }}", "type": "string" },
+            { "id": "r4", "name": "audit_log", "value": "={{ $('Audit Briefing').item.json.text }}", "type": "string" },
+            { "id": "r5", "name": "original_briefing", "value": "={{ $('Synthesise Briefing').item.json.text }}", "type": "string" },
+            { "id": "r6", "name": "mode", "value": "offline (mock sources)", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [840, 720],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-offline",
+      "name": "Offline mode",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1500,
+        "height": 220,
+        "color": 6,
+        "content": "## Ex 07 Research Agent — Offline variant\n\nThis is an opt-in fallback to `07-c-reference.workflow.json`. The Wikipedia stage (Generate Query → Wikipedia Search → Split Hits → Fetch Summary → Aggregate) is replaced by a single **Load Mock Sources** Set node that hardcodes three plausible Wikipedia-style extracts about Singapore hawker culture.\n\n**When to use:**\n- Demo robustness — no network dependency, deterministic for live demos.\n- Offline classroom or rate-limited Wikipedia.\n- Focus class time on the Synthesise → Audit → Revise loop without network noise.\n\n**Patterns lost (vs. online):** the Parallel-ish stage (Wikipedia returning N hits, per-hit fetches). The other three patterns (Chaining, Routing, Evaluator/Optimiser) are intact.\n\n**To swap the mock data:** edit `Load Mock Sources`'s `sources` field, OR copy from the standalone `mock-search-results.json` in this folder. Each source needs `title` and `extract`."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": { "main": [[{ "node": "Load Mock Sources", "type": "main", "index": 0 }]] },
+    "Load Mock Sources": { "main": [[{ "node": "Synthesise Briefing", "type": "main", "index": 0 }]] },
+    "Synthesise Briefing": { "main": [[{ "node": "Audit Briefing", "type": "main", "index": 0 }]] },
+    "Audit Briefing": { "main": [[{ "node": "Audit Clean?", "type": "main", "index": 0 }]] },
+    "Audit Clean?": {
+      "main": [
+        [{ "node": "Final (Approved)", "type": "main", "index": 0 }],
+        [{ "node": "Revise Briefing", "type": "main", "index": 0 }]
+      ]
+    },
+    "Revise Briefing": { "main": [[{ "node": "Final (Revised)", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": {
+      "ai_languageModel": [[
+        { "node": "Synthesise Briefing", "type": "ai_languageModel", "index": 0 },
+        { "node": "Audit Briefing", "type": "ai_languageModel", "index": 0 },
+        { "node": "Revise Briefing", "type": "ai_languageModel", "index": 0 }
+      ]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

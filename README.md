@@ -53,7 +53,9 @@ deliberate gaps), `NN-c-reference.workflow.json` (working solution), where
 7. [Research Agent — final lab](./07-research-agent-n8n/) — combines all four
    patterns. Wikipedia-grounded research; output audited against simplified
    ICD policies; revise on audit findings. Uses simplified slide-style XML
-   policies in `07-research-agent-n8n/policies/`.
+   policies in `07-research-agent-n8n/policies/`. Ships with an **offline
+   fallback variant** (`07-c-reference-offline.workflow.json`) for when
+   Wikipedia is unavailable or for deterministic demos.
 
 ## How to use
 

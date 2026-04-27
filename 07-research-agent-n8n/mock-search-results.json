@@ -1,0 +1,18 @@
+{
+  "_comment": "Mock Wikipedia-style search results for the offline variant of Ex 07 (07-c-reference-offline.workflow.json). Three plausible extracts about Singapore hawker culture, written in encyclopedic style, suitable for the Synthesise Briefing step. Edit the title/extract fields to point the offline workflow at a different topic. The workflow itself contains an inline copy of this data; this file exists as a clean editable reference. To use a different mock set: copy this JSON, edit, then paste the new array (the contents of `sources`) into the Load Mock Sources node's `sources` field in the workflow.",
+  "topic": "Singapore hawker culture and UNESCO recognition",
+  "sources": [
+    {
+      "title": "Hawker culture in Singapore",
+      "extract": "Singapore's hawker culture refers to food prepared and sold from individual stalls in publicly-managed food courts known as hawker centres. The tradition originated with itinerant street vendors in the 19th and 20th centuries; the National Environment Agency began consolidating them into purpose-built food centres from the 1970s. In December 2020, UNESCO inscribed Hawker Culture in Singapore on its Representative List of the Intangible Cultural Heritage of Humanity, following a multi-year nomination effort by the National Heritage Board."
+    },
+    {
+      "title": "Intangible cultural heritage",
+      "extract": "The Intangible Cultural Heritage of Humanity, sometimes called the living heritage, is a designation by UNESCO under the 2003 Convention for the Safeguarding of the Intangible Cultural Heritage. The Convention defines intangible heritage as practices, representations, expressions, knowledge, and skills that communities recognise as part of their cultural heritage. As of 2024 the list comprises over 700 elements from more than 140 countries."
+    },
+    {
+      "title": "National Environment Agency (Singapore)",
+      "extract": "The National Environment Agency is a statutory board under the Ministry of Sustainability and the Environment of the Government of Singapore. Established in 2002, the NEA is responsible for environmental policy implementation including air quality monitoring, public cleansing, and the management of approximately 114 hawker centres across the country. The NEA was a key institutional partner in Singapore's successful nomination of hawker culture for UNESCO Intangible Cultural Heritage status in 2020."
+    }
+  ]
+}

@@ -23,7 +23,33 @@ Topic-driven research → analytic briefing → policy audit → revision. Defau
 | `policies/ICD-203.xml` etc. | Four simplified IC analytic standards in slide-style XML. The audit step uses these. |
 | `07-a-blank.workflow.json` | Manual Trigger + 5 sticky notes (pattern, sub-systems, policies, rules, extension). |
 | `07-b-half-built.workflow.json` | Full 14-node graph with three substantial gaps: Synthesise Briefing prompt, Audit Briefing prompt, Audit Clean? gate value. |
-| `07-c-reference.workflow.json` | Working solution. |
+| `07-c-reference.workflow.json` | Working solution (online — uses Wikipedia). |
+| `07-c-reference-offline.workflow.json` | Working solution with the Wikipedia stage replaced by hardcoded mock sources. Use when Wikipedia is unavailable, when demoing live, or when the network step is a distraction from the audit-loop lesson. See *Offline fallback* below. |
+| `mock-search-results.json` | Standalone, human-editable copy of the mock data the offline workflow uses. Edit and paste into the workflow's `Load Mock Sources` node to point the offline variant at a different topic. |
+
+## Offline fallback variant
+
+`07-c-reference-offline.workflow.json` is an opt-in fallback that does not call Wikipedia. It is identical to the online reference except the Wikipedia stage (Generate Query → Wikipedia Search → Split Hits → Fetch Summary → Aggregate Sources) is replaced by a single **Load Mock Sources** Set node containing three Wikipedia-style extracts on Singapore hawker culture. Both the online and offline variants share the same Synthesise → Audit → Revise tail.
+
+**When to import the offline variant instead of the online one:**
+
+- Wikipedia is rate-limiting, blocked, or returning the User-Agent 403 (see *Common student errors*).
+- The classroom is offline.
+- The instructor needs deterministic demo behaviour and doesn't want a live network call to vary the output.
+- The lesson focus is the audit loop, not the research stage — strips out network noise so students concentrate on the Synthesise / Audit / Revise prompts.
+
+**What students lose vs. the online variant:**
+
+- The Parallelisation pattern (Wikipedia returning N hits, per-hit summary fetches) is no longer represented in the workflow shape. The other three patterns — Chaining, Routing, Evaluator/Optimiser — are intact.
+- The "two-step download" / "real-API-from-an-AI-workflow" lesson is missing. If you only run the offline variant, students don't see the HTTP / Split Out / Aggregate composition.
+
+**Recommended use pattern:**
+
+- For class demos and homework: the **online** variant is the default; offline is the fallback when something breaks.
+- For instructor dry-runs of the audit step: offline. Faster, deterministic.
+- For the Session 4 final-lab moment with the class watching: online if Wikipedia is healthy that day; switch to offline if it's flaky.
+
+**To swap mock data:** edit the standalone `mock-search-results.json` in this folder, then paste the new `sources` array into the `Load Mock Sources` node's `sources` field. Each entry needs a `title` and an `extract`.
 
 ## Why this exercise opens the policies
 
@@ -103,7 +129,7 @@ The pedagogical thread:
 
 | Error | Lesson |
 |---|---|
-| Wikipedia returns 403 | Wikipedia (since early 2026) requires a User-Agent header. n8n's HTTP node doesn't set one by default. Both Wikipedia HTTP nodes need `sendHeaders: true` with a `User-Agent` like `tbl4-research-agent/1.0 (Vertical Institute classroom exercise; contact: instructor)`. The reference includes this. |
+| Wikipedia returns 403 | Wikipedia (since early 2026) requires a User-Agent header. n8n's HTTP node doesn't set one by default. Both Wikipedia HTTP nodes need `sendHeaders: true` with a `User-Agent` like `tbl4-research-agent/1.0 (Vertical Institute classroom exercise; contact: instructor)`. The online reference includes this. If the header still fails (or Wikipedia is otherwise unavailable), import `07-c-reference-offline.workflow.json` instead — see *Offline fallback variant* above. |
 | Synthesise Briefing references the wrong upstream node | Should reference `$json.sources` (from Aggregate) and `$('Set Input').item.json.topic`. |
 | Briefing has no source citations | Synthesise prompt didn't enforce the format. Audit catches it (good!). |
 | Auditor fabricates rule names | Prompt didn't forbid invention. Add explicit anti-fabrication language. |
