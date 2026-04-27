@@ -1,7 +1,16 @@
-# tbl4-ai-agent-exercises
+<p align="center">
+  <img src="logo.png" alt="Tarkas Brainlab IV" width="200">
+</p>
 
-Supporting exercises for the Vertical Institute *GenAI Automation and Agency*
-course. Three groups of exercises:
+<h1 align="center">Tarkas Brainlab IV — Exercises</h1>
+
+<p align="center">
+  Supporting exercises for the Vertical Institute <em>GenAI Automation and Agency</em> course.
+</p>
+
+---
+
+Three groups of exercises:
 
 - **Foundations** (00) — warm-up.
 - **Prompt engineering** (01–02) — paste straight into Open WebUI; no n8n.
