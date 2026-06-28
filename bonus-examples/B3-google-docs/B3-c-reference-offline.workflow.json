@@ -1,0 +1,83 @@
+{
+  "name": "BonusB3 Google Docs — C Reference (Offline)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 400],
+      "parameters": {}
+    },
+    {
+      "id": "mock",
+      "name": "Load Mock Doc",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 400],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "m1", "name": "doc_text", "value": "Project Laksa — Weekly Sync\nDate: 3 June 2026\nPresent: Wei Ling (PM), Daniel (Eng), Priya (Design), Marcus (Ops)\n\nNotes:\nWe reviewed the hawker-stall onboarding flow. Priya walked through the new menu-photo upload screen; feedback was positive but the empty state is confusing. Daniel flagged that the image API times out for files over 8MB and we have no client-side resize yet. Marcus raised that three stalls in the Maxwell pilot still have not received their QR table-tents, which is blocking their go-live.\n\nDecisions:\n- We will ship the photo-upload screen in the 12 June release, with a redesigned empty state.\n- Client-side image resize is now a release blocker; it goes in before launch.\n- The Maxwell pilot go-live moves from 10 June to 17 June to absorb the delay.\n\nAction items:\n- Priya to redesign the empty state and share mockups by 6 June.\n- Daniel to add client-side resize (max 1600px) and retest the 8MB case by 10 June.\n- Marcus to chase the printer on the QR table-tents and confirm delivery by 5 June.\n- Wei Ling to update the launch comms once the new pilot date is locked.\n\nNext sync: 10 June 2026, 4pm.", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "extract",
+      "name": "Extract Action Items",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [680, 400],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a meeting-notes assistant. From the document below, extract the action items as a Markdown checklist. For each, capture the owner and the due date if stated. Use this exact format and nothing else:\n\n- [ ] <owner> — <task> (due <date, or \"no date\">)\n\nIf there are no action items, output: No action items found.\n\nDocument:\n{{ $json.doc_text }}"
+      }
+    },
+    {
+      "id": "output",
+      "name": "Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [900, 400],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "o1", "name": "action_items", "value": "={{ $json.text }}", "type": "string" },
+            { "id": "o2", "name": "mode", "value": "offline (mock doc)", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [680, 600],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-offline",
+      "name": "Offline mode",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1000,
+        "height": 220,
+        "color": 6,
+        "content": "## Bonus B3 — Offline variant\n\nAn opt-in fallback to `B3-c-reference.workflow.json`. The **Fetch Doc (HTTP)** node is replaced by a **Load Mock Doc** Set node holding the contents of `sample-doc.txt`. Everything downstream is identical.\n\n**When to use:** no Google account handy, no doc published yet, or you want a deterministic demo with no network. The lesson — get document text in, extract structure with an LLM — is unchanged; only the *source* of the text differs.\n\n**To go live:** open `B3-c-reference.workflow.json`, publish a Google Doc, paste its ID, and the same extraction runs on real document text fetched over HTTP."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Load Mock Doc", "type": "main", "index": 0 }]] },
+    "Load Mock Doc": { "main": [[{ "node": "Extract Action Items", "type": "main", "index": 0 }]] },
+    "Extract Action Items": { "main": [[{ "node": "Result", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Extract Action Items", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

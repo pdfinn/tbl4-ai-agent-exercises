@@ -1,0 +1,58 @@
+[
+  {
+    "product_code": "ABC1233-019",
+    "description": "Industrial-grade PVC conduit, 25mm x 3m, grey",
+    "uom": "length",
+    "currency": "SGD",
+    "list_unit_price": 12.50,
+    "min_order_qty": 10,
+    "lead_time_days": 14,
+    "bulk_tiers": [
+      { "min_qty": 50, "discount_pct": 8 },
+      { "min_qty": 100, "discount_pct": 12 },
+      { "min_qty": 500, "discount_pct": 18 }
+    ]
+  },
+  {
+    "product_code": "ABC1233-021",
+    "description": "Industrial-grade PVC conduit, 32mm x 3m, grey",
+    "uom": "length",
+    "currency": "SGD",
+    "list_unit_price": 15.80,
+    "min_order_qty": 10,
+    "lead_time_days": 14,
+    "bulk_tiers": [
+      { "min_qty": 50, "discount_pct": 7 },
+      { "min_qty": 100, "discount_pct": 11 },
+      { "min_qty": 500, "discount_pct": 16 }
+    ]
+  },
+  {
+    "product_code": "XLR8810-004",
+    "description": "Cable gland brass M20, IP68, pack of 10",
+    "uom": "pack",
+    "currency": "SGD",
+    "list_unit_price": 9.20,
+    "min_order_qty": 5,
+    "lead_time_days": 7,
+    "bulk_tiers": [
+      { "min_qty": 25, "discount_pct": 5 },
+      { "min_qty": 100, "discount_pct": 10 },
+      { "min_qty": 250, "discount_pct": 15 }
+    ]
+  },
+  {
+    "product_code": "DLT7702-100",
+    "description": "Junction box, 4-way, weatherproof, IP66",
+    "uom": "each",
+    "currency": "SGD",
+    "list_unit_price": 6.40,
+    "min_order_qty": 20,
+    "lead_time_days": 21,
+    "bulk_tiers": [
+      { "min_qty": 100, "discount_pct": 9 },
+      { "min_qty": 500, "discount_pct": 14 },
+      { "min_qty": 1000, "discount_pct": 20 }
+    ]
+  }
+]

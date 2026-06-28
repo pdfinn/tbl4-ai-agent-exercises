@@ -1,0 +1,159 @@
+{
+  "name": "BonusB7 Tender Pricing — C Reference (live Postgres)",
+  "nodes": [
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [140, 40],
+      "parameters": {
+        "width": 1240,
+        "height": 230,
+        "color": 7,
+        "content": "## Bonus B7 — Bulk tender pricing from a database (Reference, live)\n\nThe only change from the offline file: the **Code lookup** is replaced by a **Postgres** node running a **parameterised** query against the Customer Product DB. Everything else — tier pricing, the found? gate, the LLM that narrates — is identical.\n\n```\nRequest (code + qty) → Postgres (SELECT ... WHERE product_code = $1) → Apply tier pricing → found? → Write quote → Quote\n```\n\n**This is a structured lookup, not RAG.** Prices must be exact and auditable, so the DB is authoritative and the LLM only writes prose. Run `schema.sql` first to create the table and a **read-only** DB user. See the Security note and the README before pointing this at anything real."
+      }
+    },
+    {
+      "id": "note-security",
+      "name": "Security + governance",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [140, 290],
+      "parameters": {
+        "width": 1240,
+        "height": 330,
+        "color": 3,
+        "content": "## Credentials, security & data governance (the part that matters)\n\n- **Credentials live in n8n's encrypted store**, never in a prompt or expression. Set them on the Postgres node's credential; they're encrypted at rest with `N8N_ENCRYPTION_KEY`. Back that key up — lose it and every credential is unreadable.\n- **Parameterised queries only.** This node passes `product_code` as a bound parameter (`$1`), never string-concatenated into SQL. That's your defence against SQL injection — and it's mandatory the moment an LLM or end-user influences the input.\n- **Least privilege.** n8n connects as `n8n_readonly` (SELECT on `products` only — see `schema.sql`). A pricing lookup never needs INSERT/UPDATE/DELETE. Don't hand it an admin role.\n- **Keep the LLM's view minimal.** Only the one priced row reaches the model — not the catalogue, not customer PII. With **local Ollama**, even that row never leaves the network.\n- **Cloud n8n + internal DB:** the DB is usually *not* public. Reach it via VPN / private networking / an IP allowlist, or self-host n8n inside the network. Many enterprises self-host n8n for exactly this reason.\n- **Audit + governance:** log who quoted what (customer, code, qty, price, timestamp); gate any *write* (placing an order) behind human approval; apply row-level security if reps should only price their own accounts."
+      }
+    },
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [220, 720],
+      "parameters": {}
+    },
+    {
+      "id": "request",
+      "name": "Incoming Request",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [420, 720],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "r1", "name": "product_code", "value": "ABC1233-019", "type": "string" },
+            { "id": "r2", "name": "qty", "value": 100, "type": "number" },
+            { "id": "r3", "name": "customer", "value": "Maxwell Facilities Pte Ltd", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "pg",
+      "name": "Query Customer Product DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [640, 720],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT product_code, description, uom, currency, list_unit_price, min_order_qty, lead_time_days, bulk_tiers\nFROM products\nWHERE product_code = $1;",
+        "options": { "queryReplacement": "={{ $json.product_code }}" }
+      }
+    },
+    {
+      "id": "price",
+      "name": "Apply Tier Pricing",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [860, 720],
+      "parameters": {
+        "jsCode": "// The DB returned the authoritative product row (or nothing). Compute the\n// bulk-tender price deterministically. The qty came from the request, the\n// list price and tiers came from the DB — the LLM touches none of it.\n\nconst rows = $input.all();\nconst req = $('Incoming Request').first().json;\n\nif (rows.length === 0) {\n  return [{ json: { found: false, product_code: req.product_code, qty: req.qty, customer: req.customer } }];\n}\n\nconst p = rows[0].json;\nconst tiers = typeof p.bulk_tiers === 'string' ? JSON.parse(p.bulk_tiers) : p.bulk_tiers;\nconst listUnit = Number(p.list_unit_price);\n\nlet discount = 0;\nfor (const t of tiers) { if (req.qty >= t.min_qty) discount = t.discount_pct; }\n\nconst netUnit = Number((listUnit * (1 - discount / 100)).toFixed(2));\nconst lineTotal = Number((netUnit * req.qty).toFixed(2));\nconst savings = Number(((listUnit - netUnit) * req.qty).toFixed(2));\n\nreturn [{ json: {\n  found: true,\n  customer: req.customer,\n  product_code: p.product_code,\n  description: p.description,\n  uom: p.uom,\n  currency: p.currency,\n  qty: req.qty,\n  min_order_qty: p.min_order_qty,\n  below_min_order_qty: req.qty < p.min_order_qty,\n  list_unit_price: listUnit,\n  applied_discount_pct: discount,\n  net_unit_price: netUnit,\n  line_total: lineTotal,\n  total_savings: savings,\n  lead_time_days: p.lead_time_days\n} }];"
+      }
+    },
+    {
+      "id": "found",
+      "name": "Product found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1080, 720],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "if1", "leftValue": "={{ $json.found }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "quote-llm",
+      "name": "Write the Quote",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1320, 620],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a sales-desk assistant drafting a bulk tender quote. Use ONLY the figures below — do NOT recalculate, round, or change any number. Your job is wording, not arithmetic.\n\nWrite a short, professional quote containing: product code and description; quantity and unit of measure; list unit price, bulk discount applied (percent), net unit price; line total and total saving versus list; lead time. If below_min_order_qty is true, add a line noting it.\n\nEnd with: \"Figures are system-generated from the Customer Product DB and subject to final confirmation.\"\n\nQuote data:\n{{ JSON.stringify($json, null, 2) }}"
+      }
+    },
+    {
+      "id": "notfound",
+      "name": "Not Found Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1320, 820],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "n1", "name": "result", "value": "=No catalogue entry found for product code {{ $json.product_code }}. Please check the code and try again.", "type": "string" },
+            { "id": "n2", "name": "status", "value": "not_found", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "quote-out",
+      "name": "Quote",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1540, 620],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "qo1", "name": "quote_text", "value": "={{ $json.text }}", "type": "string" },
+            { "id": "qo2", "name": "line_total", "value": "={{ $('Apply Tier Pricing').item.json.line_total }}", "type": "number" },
+            { "id": "qo3", "name": "net_unit_price", "value": "={{ $('Apply Tier Pricing').item.json.net_unit_price }}", "type": "number" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1320, 820],
+      "parameters": { "model": "llama3.1:8b" }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Incoming Request", "type": "main", "index": 0 }]] },
+    "Incoming Request": { "main": [[{ "node": "Query Customer Product DB", "type": "main", "index": 0 }]] },
+    "Query Customer Product DB": { "main": [[{ "node": "Apply Tier Pricing", "type": "main", "index": 0 }]] },
+    "Apply Tier Pricing": { "main": [[{ "node": "Product found?", "type": "main", "index": 0 }]] },
+    "Product found?": { "main": [
+      [{ "node": "Write the Quote", "type": "main", "index": 0 }],
+      [{ "node": "Not Found Message", "type": "main", "index": 0 }]
+    ] },
+    "Write the Quote": { "main": [[{ "node": "Quote", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Write the Quote", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

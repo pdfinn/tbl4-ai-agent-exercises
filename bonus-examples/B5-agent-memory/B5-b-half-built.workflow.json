@@ -1,0 +1,187 @@
+{
+  "name": "BonusB5 Agent With Memory — B Half-Built",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 520],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 520],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "user_message", "value": "Hi! I'm Mei. I run a kopi stall in Tiong Bahru and I'd love help writing daily specials.", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "readmem",
+      "name": "Read Memory",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [640, 520],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "operation": "read",
+        "fileSelector": "/data/shared/agent-memory.txt",
+        "options": {}
+      }
+    },
+    {
+      "id": "extractmem",
+      "name": "Extract Memory",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [840, 520],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "data",
+        "options": {}
+      }
+    },
+    {
+      "id": "assistant",
+      "name": "Assistant",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [1060, 520],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Set Input').item.json.user_message }}",
+        "options": {
+          "systemMessage": ""
+        }
+      }
+    },
+    {
+      "id": "updatemem",
+      "name": "Update Memory",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1320, 520],
+      "parameters": {
+        "promptType": "define",
+        "text": ""
+      }
+    },
+    {
+      "id": "tofile",
+      "name": "Memory To File",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [1540, 520],
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "text",
+        "options": { "fileName": "agent-memory.txt" }
+      }
+    },
+    {
+      "id": "writemem",
+      "name": "Write Memory",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [1740, 520],
+      "parameters": {
+        "operation": "write",
+        "fileName": "",
+        "dataPropertyName": "data",
+        "options": {}
+      }
+    },
+    {
+      "id": "final",
+      "name": "Final",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1940, 520],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "f1", "name": "reply", "value": "={{ $('Assistant').item.json.output }}", "type": "string" },
+            { "id": "f2", "name": "memory_before", "value": "={{ $('Extract Memory').item.json.data || '(empty — first run)' }}", "type": "string" },
+            { "id": "f3", "name": "memory_after", "value": "={{ $('Update Memory').item.json.text }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1180, 760],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1900,
+        "height": 210,
+        "color": 7,
+        "content": "## Bonus B5 — An agent that remembers you (Half-Built)\n\nThe graph is wired for you. Three things are missing — fill them in. They are the three pieces that turn a forgetful chatbot into an agent with memory.\n\n```\nMessage → Read Memory → Extract Memory → ASSISTANT (Agent) → Update Memory → Memory To File → Write Memory → Final\n                                          [GAP 1: inject       [GAP 2: decide                   [GAP 3: where\n                                           the memory]          what to keep]                    to save]\n```"
+      }
+    },
+    {
+      "id": "note-gaps",
+      "name": "The 3 gaps",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1060, 280],
+      "parameters": {
+        "width": 700,
+        "height": 360,
+        "color": 6,
+        "content": "## Fill these three in\n\n**GAP 1 — Assistant → Options → System Message.** Tell the agent who it is AND paste the remembered facts into the prompt. The remembered text is:\n```\n{{ $('Extract Memory').item.json.data || '(nothing yet)' }}\n```\nWithout this line the agent reads nothing — it can't remember.\n\n**GAP 2 — Update Memory → Text (prompt).** Ask the LLM to output the COMPLETE updated memory: durable facts only (name, business, location, goals), one per line, merging the new exchange with the old. You'll need `$('Extract Memory').item.json.data`, `$('Set Input').item.json.user_message`, and `$('Assistant').item.json.output`.\n\n**GAP 3 — Write Memory → File Name (and Path).** Save to the SAME path Read Memory reads from: `/data/shared/agent-memory.txt`. Read and write must agree or the memory never comes back."
+      }
+    },
+    {
+      "id": "note-setup",
+      "name": "How to test",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 760],
+      "parameters": {
+        "width": 820,
+        "height": 300,
+        "color": 3,
+        "content": "## How to test it\n\n**Run #1:** leave the default \"Hi! I'm Mei…\" message. After you fill the gaps, run. Open **Final** — `memory_after` should now list Mei + kopi stall + Tiong Bahru, and `./shared/agent-memory.txt` should exist on your host.\n\n**Run #2 (the real test):** change **Set Input → user_message** to *\"What should today's special be?\"* (no name, no context). Run again. If GAP 1 is right, the Assistant greets Mei by name — proof it read the file.\n\nSeed the file once so the first read is clean (optional — Read/Extract are set to Continue On Error):\n```\ncp B5-agent-memory/agent-memory.seed.txt  /path/to/starter-kit/shared/agent-memory.txt\n```"
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": { "main": [[{ "node": "Read Memory", "type": "main", "index": 0 }]] },
+    "Read Memory": { "main": [[{ "node": "Extract Memory", "type": "main", "index": 0 }]] },
+    "Extract Memory": { "main": [[{ "node": "Assistant", "type": "main", "index": 0 }]] },
+    "Assistant": { "main": [[{ "node": "Update Memory", "type": "main", "index": 0 }]] },
+    "Update Memory": { "main": [[{ "node": "Memory To File", "type": "main", "index": 0 }]] },
+    "Memory To File": { "main": [[{ "node": "Write Memory", "type": "main", "index": 0 }]] },
+    "Write Memory": { "main": [[{ "node": "Final", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": {
+      "ai_languageModel": [[
+        { "node": "Assistant", "type": "ai_languageModel", "index": 0 },
+        { "node": "Update Memory", "type": "ai_languageModel", "index": 0 }
+      ]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

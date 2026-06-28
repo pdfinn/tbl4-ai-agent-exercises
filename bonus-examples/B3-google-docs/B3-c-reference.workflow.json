@@ -1,0 +1,113 @@
+{
+  "name": "BonusB3 Google Docs — C Reference (live)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 400],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 400],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "doc_id", "value": "PASTE-YOUR-PUBLISHED-DOC-ID-HERE", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch Doc (export as text)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [660, 400],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://docs.google.com/document/d/{{ $('Set Input').item.json.doc_id }}/export?format=txt",
+        "options": {
+          "response": {
+            "response": { "responseFormat": "text", "outputPropertyName": "doc_text" }
+          }
+        }
+      }
+    },
+    {
+      "id": "extract",
+      "name": "Extract Action Items",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [880, 400],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a meeting-notes assistant. From the document below, extract the action items as a Markdown checklist. For each, capture the owner and the due date if stated. Use this exact format and nothing else:\n\n- [ ] <owner> — <task> (due <date, or \"no date\">)\n\nIf there are no action items, output: No action items found.\n\nDocument:\n{{ $json.doc_text }}"
+      }
+    },
+    {
+      "id": "output",
+      "name": "Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1100, 400],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "o1", "name": "action_items", "value": "={{ $json.text }}", "type": "string" },
+            { "id": "o2", "name": "source_doc_id", "value": "={{ $('Set Input').item.json.doc_id }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [880, 600],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1100,
+        "height": 200,
+        "color": 7,
+        "content": "## Bonus B3 — Read a Google Doc (Reference, live)\n\nNo Google node, no OAuth, no API key. A published Google Doc can be fetched as plain text by URL — so \"connecting to Google Docs\" is just the **HTTP Request** node you already know from Ex 00 and Ex 07.\n\n```\nDoc ID → Fetch Doc (HTTP, export?format=txt) → Extract Action Items (LLM) → Result\n```\n\n**Read-only.** This reads a published doc; it cannot write back. Writing needs the real Google Docs node + a Service Account (see the setup note). For getting document text *into* a workflow, this is the simplest path that exists."
+      }
+    },
+    {
+      "id": "note-setup",
+      "name": "Setup — publish your doc",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 620],
+      "parameters": {
+        "width": 1100,
+        "height": 300,
+        "color": 3,
+        "content": "## To run this live (one-time, ~2 min)\n\n1. Open a Google Doc (or make one — paste in `sample-doc.txt` from this folder).\n2. **Share → General access → Anyone with the link → Viewer.** (Or File → Share → Publish to web.)\n3. Copy the doc ID from the URL: `docs.google.com/document/d/`**`THIS_PART`**`/edit`.\n4. Paste it into **Set Input → `doc_id`** and run.\n\n**If you get HTML back instead of your text:** the doc isn't link-shared yet — Google returned a sign-in page. Fix the sharing setting.\n\n### The three ways to reach Google from n8n\n- **Export URL (this exercise)** — zero credentials, read-only. Best for getting text in.\n- **Service Account** — make a Google Cloud service account, paste its JSON key into an n8n Google credential, then *share the doc with the service-account email*. No browser/consent dance. Use this when you need to WRITE.\n- **OAuth2** — full consent-screen flow with a redirect to `http://localhost:5678/rest/oauth2-credential/callback`. Most powerful, most setup. Overkill for class.\n\n**No doc to publish?** Import `B3-c-reference-offline.workflow.json` instead — it runs with no Google setup at all."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": { "main": [[{ "node": "Fetch Doc (export as text)", "type": "main", "index": 0 }]] },
+    "Fetch Doc (export as text)": { "main": [[{ "node": "Extract Action Items", "type": "main", "index": 0 }]] },
+    "Extract Action Items": { "main": [[{ "node": "Result", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Extract Action Items", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

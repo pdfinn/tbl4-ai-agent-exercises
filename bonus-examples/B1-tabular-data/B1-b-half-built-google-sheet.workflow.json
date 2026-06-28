@@ -1,0 +1,149 @@
+{
+  "name": "BonusB1 Tabular Data — B Half-Built (Google Sheet, find the 3 gaps)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "sheet_id", "value": "", "type": "string" },
+            { "id": "i2", "name": "gid", "value": "0", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch Sheet (export as CSV)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [660, 500],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://docs.google.com/spreadsheets/d/SHEET_ID_HERE/export?format=csv&gid={{ $('Set Input').item.json.gid }}",
+        "options": {
+          "response": {
+            "response": { "responseFormat": "file", "outputPropertyName": "data" }
+          }
+        }
+      }
+    },
+    {
+      "id": "parse",
+      "name": "Parse CSV Into Rows",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [880, 500],
+      "parameters": { "operation": "csv", "binaryPropertyName": "data", "options": {} }
+    },
+    {
+      "id": "perrow",
+      "name": "Add Revenue Column",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1100, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "p1", "name": "dish", "value": "={{ $json.dish }}", "type": "string" },
+            { "id": "p2", "name": "stall", "value": "={{ $json.stall }}", "type": "string" },
+            { "id": "p3", "name": "category", "value": "={{ $json.category }}", "type": "string" },
+            { "id": "p4", "name": "units_sold", "value": "={{ Number($json.units_sold) }}", "type": "number" },
+            { "id": "p5", "name": "revenue", "value": "={{ Number($json.price) * Number($json.units_sold) }}", "type": "number" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "filter",
+      "name": "Keep Strong Sellers",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [1320, 500],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "f1", "leftValue": "={{ $json.units_sold }}", "rightValue": 40, "operator": { "type": "number", "operation": "gte" } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "sort",
+      "name": "Sort By Revenue",
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [1540, 500],
+      "parameters": {
+        "type": "simple",
+        "sortFieldsUI": { "sortField": [ { "fieldName": "revenue", "order": "descending" } ] },
+        "options": {}
+      }
+    },
+    {
+      "id": "aggregate",
+      "name": "Collect Rows",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1760, 500],
+      "parameters": { "aggregate": "aggregateAllItemData", "destinationFieldName": "top_dishes", "include": "allFields" }
+    },
+    {
+      "id": "summarise",
+      "name": "Write Readout",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1980, 500],
+      "parameters": { "promptType": "define", "text": "" }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1980, 720],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-gaps",
+      "name": "Gaps",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1980,
+        "height": 280,
+        "color": 5,
+        "content": "## Half-Built (Google Sheet) — 3 gaps\n\nFirst, share a Google Sheet (see setup below). Then fill the gaps. The data pipeline (Parse CSV → Add Revenue → Filter → Sort → Collect) is done for you — this variant is about the *source*.\n\n1. **Set Input → `sheet_id`** is blank. Paste your shared Sheet's ID — the part between `/d/` and `/edit` in its URL. (`gid` is already `0` for the first tab.)\n2. **Fetch Sheet → URL** has a placeholder `SHEET_ID_HERE`. Replace it with an expression that reads the field you just set:\n   `=https://docs.google.com/spreadsheets/d/{{ $('Set Input').item.json.sheet_id }}/export?format=csv&gid={{ $('Set Input').item.json.gid }}`\n3. **Write Readout → prompt** is blank. Same as the embedded exercise — narrate the rows in `$json.top_dishes`. Hints:\n   - Total: `${{ $json.top_dishes.reduce((s, d) => s + d.revenue, 0) }}`\n   - List: `{{ $json.top_dishes.map(d => '- ' + d.dish + ': $' + d.revenue).join('\\n') }}`\n\n**Already done:** the HTTP node returns the response as a binary **File** (`data`), and **Parse CSV Into Rows** turns it into one item per row using the header row. Run *Fetch Sheet* then *Parse CSV Into Rows* on their own first and read the panels.\n\n**Setup:** Share → Anyone with the link → Viewer. **No Google account?** Use the embedded `B1-b-half-built.workflow.json` instead."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": { "main": [[{ "node": "Fetch Sheet (export as CSV)", "type": "main", "index": 0 }]] },
+    "Fetch Sheet (export as CSV)": { "main": [[{ "node": "Parse CSV Into Rows", "type": "main", "index": 0 }]] },
+    "Parse CSV Into Rows": { "main": [[{ "node": "Add Revenue Column", "type": "main", "index": 0 }]] },
+    "Add Revenue Column": { "main": [[{ "node": "Keep Strong Sellers", "type": "main", "index": 0 }]] },
+    "Keep Strong Sellers": { "main": [[{ "node": "Sort By Revenue", "type": "main", "index": 0 }]] },
+    "Sort By Revenue": { "main": [[{ "node": "Collect Rows", "type": "main", "index": 0 }]] },
+    "Collect Rows": { "main": [[{ "node": "Write Readout", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Write Readout", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

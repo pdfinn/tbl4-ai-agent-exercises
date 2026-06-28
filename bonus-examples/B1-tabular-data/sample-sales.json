@@ -1,0 +1,12 @@
+[
+  { "dish": "Chicken Rice",      "stall": "Tian Tian",       "category": "Main",    "price": 5.5, "units_sold": 120 },
+  { "dish": "Char Kway Teow",    "stall": "Hill Street",     "category": "Main",    "price": 6.0, "units_sold": 85 },
+  { "dish": "Laksa",             "stall": "328 Katong",      "category": "Main",    "price": 7.0, "units_sold": 64 },
+  { "dish": "Roti Prata",        "stall": "Sin Ming",        "category": "Main",    "price": 4.0, "units_sold": 98 },
+  { "dish": "Kaya Toast Set",    "stall": "Ya Kun",          "category": "Main",    "price": 5.0, "units_sold": 41 },
+  { "dish": "Teh Tarik",         "stall": "Sin Ming",        "category": "Drink",   "price": 1.8, "units_sold": 210 },
+  { "dish": "Kopi O",            "stall": "Ya Kun",          "category": "Drink",   "price": 1.5, "units_sold": 175 },
+  { "dish": "Sugarcane Juice",   "stall": "Maxwell Corner",  "category": "Drink",   "price": 2.5, "units_sold": 52 },
+  { "dish": "Chendol",           "stall": "328 Katong",      "category": "Dessert", "price": 3.5, "units_sold": 38 },
+  { "dish": "Ice Kacang",        "stall": "Maxwell Corner",  "category": "Dessert", "price": 3.0, "units_sold": 29 }
+]

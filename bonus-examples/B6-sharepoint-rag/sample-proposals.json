@@ -1,0 +1,47 @@
+[
+  {
+    "proposal_id": "P-2023-014",
+    "title": "Rural Solar Microgrids — Northern Kenya",
+    "country": "Kenya",
+    "year": 2023,
+    "sector": "Energy access",
+    "budget_usd": 4200000,
+    "text": "Programme summary: deploy 38 solar microgrids across Turkana and Marsabit counties to bring first-time electricity to roughly 21,000 households. Country stability constraints: Northern Kenya is broadly stable at the national level but the target counties experience periodic inter-communal conflict over grazing land and water, and cross-border spillover from the Ethiopian and South Sudanese borders. We rate political-security risk as MODERATE and have budgeted for a community-liaison officer and conflict-sensitivity training in each county. Currency risk on the Kenyan shilling is LOW-MODERATE. Impact metrics: target 21,000 households connected within 24 months; 90 small businesses electrified; projected 14,000 tonnes CO2 avoided annually versus diesel and kerosene baselines; expected uplift of two hours per day in study time for school-age children measured by household survey. Monitoring uses quarterly meter-data pulls plus an annual independent verification."
+  },
+  {
+    "proposal_id": "P-2023-027",
+    "title": "Maternal Health Clinics — Eastern DRC",
+    "country": "Democratic Republic of the Congo",
+    "year": 2023,
+    "sector": "Health",
+    "budget_usd": 6800000,
+    "text": "Programme summary: build and staff 12 maternal-health clinics in North Kivu and Ituri, targeting a 30 percent reduction in maternal mortality in the catchment areas over three years. Country stability constraints: the target provinces are ACTIVE CONFLICT zones with armed-group activity (M23 and others), frequent displacement, and constrained humanitarian access. We rate political-security risk as HIGH. The proposal assumes a 25 percent contingency for security and evacuation, remote-managed construction, and reliance on local health workers to maintain continuity during access disruptions. Currency and supply-chain risk is HIGH. Impact metrics: target 30 percent reduction in maternal mortality across a catchment of 240,000 people; 18,000 skilled birth attendances per year; 95 percent cold-chain availability for obstetric supplies. The proposal flags that conflict may force phasing and that impact figures are conditional on at least 70 percent site-access across any given year."
+  },
+  {
+    "proposal_id": "P-2024-003",
+    "title": "Smallholder Irrigation Scale-up — Rural Vietnam",
+    "country": "Vietnam",
+    "year": 2024,
+    "sector": "Agriculture",
+    "budget_usd": 3100000,
+    "text": "Programme summary: extend drip-irrigation and water-storage to 6,500 smallholder farms in the Mekong Delta to buffer against saltwater intrusion and dry-season shortfall. Country stability constraints: Vietnam is politically STABLE with a low security-risk profile; the principal constraints are environmental (saline intrusion, subsidence) and regulatory rather than security-related. We rate political-security risk as LOW. Currency risk on the dong is LOW. Impact metrics: target 6,500 farms with improved irrigation within 18 months; projected 22 percent average increase in dry-season yield; 35 percent reduction in irrigation water use per hectare; an estimated 4,000 farm households moved above the national rural poverty line. Monitoring uses satellite NDVI plus a stratified farm-survey panel of 600 farms."
+  },
+  {
+    "proposal_id": "P-2024-019",
+    "title": "Girls' Secondary Education Bursaries — Northern Nigeria",
+    "country": "Nigeria",
+    "year": 2024,
+    "sector": "Education",
+    "budget_usd": 5400000,
+    "text": "Programme summary: provide bursaries, safe transport, and learning materials to keep 14,000 girls in secondary school across Kaduna, Katsina, and Zamfara states. Country stability constraints: the target states face SIGNIFICANT insecurity from banditry and kidnapping, including school abductions, plus periodic communal violence. We rate political-security risk as HIGH. The design includes school-security stipends, community watch coordination, and a flexible disbursement model that can switch to home-based learning kits if schools close. Currency risk on the naira is HIGH given recent devaluation. Impact metrics: target 14,000 girls retained through to end of secondary; aim for an 80 percent transition rate into the next grade; targeted 25 percent improvement in numeracy assessment scores. The proposal notes that naira devaluation has already eroded the per-girl bursary value by an estimated 18 percent and requests an indexed top-up clause."
+  },
+  {
+    "proposal_id": "P-2024-031",
+    "title": "Coastal Mangrove Restoration — Eastern Indonesia",
+    "country": "Indonesia",
+    "year": 2024,
+    "sector": "Climate adaptation",
+    "budget_usd": 2700000,
+    "text": "Programme summary: restore 1,800 hectares of degraded mangrove across Sulawesi and Maluku to protect coastlines and create blue-carbon value. Country stability constraints: Indonesia is broadly STABLE; the target areas have low security risk but logistical constraints from remoteness and a complex land-tenure picture across customary and state claims. We rate political-security risk as LOW-MODERATE, driven by tenure disputes rather than violence. Currency risk on the rupiah is MODERATE. Impact metrics: target 1,800 hectares restored with 70 percent seedling survival at 36 months; projected 540,000 tonnes CO2 sequestered over the project's 20-year carbon horizon; 4,200 coastal households with improved storm protection; 600 jobs in nursery and planting work. Monitoring combines drone canopy surveys with community-based survival counts."
+  }
+]

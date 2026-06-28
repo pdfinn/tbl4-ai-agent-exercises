@@ -1,0 +1,147 @@
+{
+  "name": "BonusB1 Tabular Data — C Reference (File Upload, live)",
+  "nodes": [
+    {
+      "id": "form",
+      "name": "On Form Submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [240, 500],
+      "webhookId": "b1-csv-upload-form",
+      "parameters": {
+        "formTitle": "Upload your sales CSV",
+        "formDescription": "CSV columns required: dish, stall, category, price, units_sold",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Sales CSV",
+              "fieldType": "file",
+              "acceptFileTypes": ".csv",
+              "multipleFiles": false,
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "parse",
+      "name": "Parse CSV Into Rows",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [460, 500],
+      "parameters": { "operation": "csv", "binaryPropertyName": "Sales_CSV", "options": {} }
+    },
+    {
+      "id": "perrow",
+      "name": "Add Revenue Column",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [680, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "p1", "name": "dish", "value": "={{ $json.dish }}", "type": "string" },
+            { "id": "p2", "name": "stall", "value": "={{ $json.stall }}", "type": "string" },
+            { "id": "p3", "name": "category", "value": "={{ $json.category }}", "type": "string" },
+            { "id": "p4", "name": "units_sold", "value": "={{ Number($json.units_sold) }}", "type": "number" },
+            { "id": "p5", "name": "revenue", "value": "={{ Number($json.price) * Number($json.units_sold) }}", "type": "number" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "filter",
+      "name": "Keep Strong Sellers",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [900, 500],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "f1", "leftValue": "={{ $json.units_sold }}", "rightValue": 40, "operator": { "type": "number", "operation": "gte" } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "sort",
+      "name": "Sort By Revenue",
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [1120, 500],
+      "parameters": {
+        "type": "simple",
+        "sortFieldsUI": { "sortField": [ { "fieldName": "revenue", "order": "descending" } ] },
+        "options": {}
+      }
+    },
+    {
+      "id": "aggregate",
+      "name": "Collect Rows",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1340, 500],
+      "parameters": { "aggregate": "aggregateAllItemData", "destinationFieldName": "top_dishes", "include": "allFields" }
+    },
+    {
+      "id": "summarise",
+      "name": "Write Readout",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1560, 500],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a sales analyst. Below is a list of dishes that each sold at least 40 units, sorted by revenue (highest first). The total revenue figure is computed for you — do not recompute it.\n\nWrite a 2-3 sentence readout for the stall owners: name the top earner, note any pattern you see across categories, and state the total revenue. Plain prose, no bullet points, no preamble.\n\nTotal revenue across these dishes: ${{ $json.top_dishes.reduce((sum, d) => sum + d.revenue, 0) }}\n\nDishes:\n{{ $json.top_dishes.map(d => '- ' + d.dish + ' (' + d.stall + ', ' + d.category + '): $' + d.revenue + ' from ' + d.units_sold + ' sold').join('\\n') }}"
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1560, 720],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1560,
+        "height": 200,
+        "color": 7,
+        "content": "## Bonus B1 — Tabular data from an uploaded file (Reference, live)\n\nSame pipeline, but the user **uploads a CSV** through a web form. The trigger is a **Form Trigger** with a File field — n8n hosts the upload page for you.\n\n```\nForm (File field) → Parse CSV Into Rows → Add Revenue Column → Keep Strong Sellers → Sort → Collect → Write Readout (LLM)\n(file → binary)     (Extract From File: rows become items)\n```\n\n**What changed:** the Manual Trigger / Set Input front end is replaced by a Form Trigger. The uploaded file arrives as **binary**; Extract From File turns it into one item per row. No Split Out — same as the Google Sheet variant. Everything from Add Revenue Column on is identical."
+      }
+    },
+    {
+      "id": "note-setup",
+      "name": "How to run it",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 760],
+      "parameters": {
+        "width": 1300,
+        "height": 320,
+        "color": 3,
+        "content": "## Running a Form Trigger\n\n1. Click **On Form Submission**, then the **Test URL** (\"Open form in a new tab\" / the test-form button). n8n opens the hosted upload page.\n2. Upload `sample-sales.csv` from this folder (or any CSV with the columns `dish, stall, category, price, units_sold`).\n3. Submit. The workflow runs; click the nodes to read the panels.\n\n### ⚠️ One thing you MUST verify: the binary field name\nWhen a file is uploaded, n8n stores it as a **binary property**. The exact name depends on your n8n version (often the field label with spaces → underscores, e.g. `Sales_CSV`).\n\n- After your first test upload, click **On Form Submission** and look at the **Binary** tab in the output panel. Note the property name.\n- Open **Parse CSV Into Rows → Input Binary Field** and set it to that exact name. This reference guesses `Sales_CSV`; fix it if your version differs.\n\n### Why a Form Trigger?\nUnlike the embedded (Set node) and Google Sheet variants, this lets a user bring their **own** file at run time — and an importable workflow can't carry a file, so upload is the way. To get a permanent public upload URL, **activate** the workflow and use the Production URL.\n\n**No file handy / offline?** Use the embedded `B1-c-reference.workflow.json`."
+      }
+    }
+  ],
+  "connections": {
+    "On Form Submission": { "main": [[{ "node": "Parse CSV Into Rows", "type": "main", "index": 0 }]] },
+    "Parse CSV Into Rows": { "main": [[{ "node": "Add Revenue Column", "type": "main", "index": 0 }]] },
+    "Add Revenue Column": { "main": [[{ "node": "Keep Strong Sellers", "type": "main", "index": 0 }]] },
+    "Keep Strong Sellers": { "main": [[{ "node": "Sort By Revenue", "type": "main", "index": 0 }]] },
+    "Sort By Revenue": { "main": [[{ "node": "Collect Rows", "type": "main", "index": 0 }]] },
+    "Collect Rows": { "main": [[{ "node": "Write Readout", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Write Readout", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

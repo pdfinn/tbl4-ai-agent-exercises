@@ -66,6 +66,45 @@ deliberate gaps), `NN-c-reference.workflow.json` (working solution), where
    fallback variant** (`07-c-reference-offline.workflow.json`) for when
    Wikipedia is unavailable or for deterministic demos.
 
+### Bonus / useful examples
+
+Standalone, student-requested examples in [`bonus-examples/`](./bonus-examples/).
+Not part of the Session 4 pattern arc — pull in whichever a class asks for.
+Same stack and rules; same three-form structure (`a-blank` / `b-half-built` /
+`c-reference`) with instructor notes (B6–B7 ship `a-blank` + `c-reference` +
+offline, no half-built yet).
+
+- **B1** [Working with tabular data](./bonus-examples/B1-tabular-data/) — one
+  item = one row: Split Out → computed column → Filter → Sort → Aggregate →
+  LLM readout. Ships a **live Google Sheet variant** that fetches a shared
+  Sheet as CSV (zero-auth, same trick as B3).
+- **B2** [Classify reviews, then filter](./bonus-examples/B2-review-classifier/)
+  — an LLM sentiment classifier per row, then filter and summarise. (Honest
+  about why we don't scrape Google reviews.)
+- **B3** [Read a Google Doc](./bonus-examples/B3-google-docs/) — fetch a
+  published Doc as text over plain HTTP (no Google node, no OAuth, no API key);
+  explains the three Google auth tiers. Ships an offline variant.
+- **B4** [Check a date, else find an alternate](./bonus-examples/B4-calendar-date-finder/)
+  — routing/gate on a date predicate with Luxon date maths; proposes the next
+  free Monday/Tuesday afternoon.
+- **B5** [An agent that remembers you](./bonus-examples/B5-agent-memory/) —
+  memory as text in the prompt, persistence as a file read before / written
+  after; the only bonus that uses the **AI Agent** node.
+- **B6** [Query SharePoint proposals with RAG](./bonus-examples/B6-sharepoint-rag/)
+  — retrieve-then-ground over a private KB; the KB is the *indexed copy*, and
+  comparison is a separate synthesis step (like Ex 07). Honest about what the
+  live SharePoint (Microsoft Graph) and vector-store version costs. Runs offline
+  with a Code-node retriever stand-in.
+- **B7** [Bulk tender pricing from a database](./bonus-examples/B7-database-query/)
+  — **query structured data, don't RAG it**: parameterised DB lookup, deterministic
+  bulk-tier pricing, LLM writes only the quote. Covers credentials, least-privilege,
+  SQL-injection, and data governance. Runs offline; live Postgres variant + `schema.sql`.
+
+A theme across the bonus set: **nodes compute, the LLM narrates** — totals,
+filters, dates, prices, and citations come from nodes; the LLM only handles
+judgement (sentiment, grounded synthesis) and wording. **B6 vs B7** also draws
+the line between RAG (unstructured docs) and a database query (structured data).
+
 ## How to use
 
 For chat exercises (00 stage 1, 01, 02): paste the system prompt into Open

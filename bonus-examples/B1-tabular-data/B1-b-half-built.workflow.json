@@ -1,0 +1,136 @@
+{
+  "name": "BonusB1 Tabular Data — B Half-Built (find the 3 gaps)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input (the table)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "i1",
+              "name": "rows",
+              "value": "=[\n  { \"dish\": \"Chicken Rice\", \"stall\": \"Tian Tian\", \"category\": \"Main\", \"price\": 5.5, \"units_sold\": 120 },\n  { \"dish\": \"Char Kway Teow\", \"stall\": \"Hill Street\", \"category\": \"Main\", \"price\": 6.0, \"units_sold\": 85 },\n  { \"dish\": \"Laksa\", \"stall\": \"328 Katong\", \"category\": \"Main\", \"price\": 7.0, \"units_sold\": 64 },\n  { \"dish\": \"Roti Prata\", \"stall\": \"Sin Ming\", \"category\": \"Main\", \"price\": 4.0, \"units_sold\": 98 },\n  { \"dish\": \"Kaya Toast Set\", \"stall\": \"Ya Kun\", \"category\": \"Main\", \"price\": 5.0, \"units_sold\": 41 },\n  { \"dish\": \"Teh Tarik\", \"stall\": \"Sin Ming\", \"category\": \"Drink\", \"price\": 1.8, \"units_sold\": 210 },\n  { \"dish\": \"Kopi O\", \"stall\": \"Ya Kun\", \"category\": \"Drink\", \"price\": 1.5, \"units_sold\": 175 },\n  { \"dish\": \"Sugarcane Juice\", \"stall\": \"Maxwell Corner\", \"category\": \"Drink\", \"price\": 2.5, \"units_sold\": 52 },\n  { \"dish\": \"Chendol\", \"stall\": \"328 Katong\", \"category\": \"Dessert\", \"price\": 3.5, \"units_sold\": 38 },\n  { \"dish\": \"Ice Kacang\", \"stall\": \"Maxwell Corner\", \"category\": \"Dessert\", \"price\": 3.0, \"units_sold\": 29 }\n]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "split",
+      "name": "Split Into Rows",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [640, 500],
+      "parameters": { "fieldToSplitOut": "rows", "options": {} }
+    },
+    {
+      "id": "perrow",
+      "name": "Add Revenue Column",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [840, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "p1", "name": "dish", "value": "={{ $json.dish }}", "type": "string" },
+            { "id": "p2", "name": "stall", "value": "={{ $json.stall }}", "type": "string" },
+            { "id": "p3", "name": "category", "value": "={{ $json.category }}", "type": "string" },
+            { "id": "p4", "name": "units_sold", "value": "={{ $json.units_sold }}", "type": "number" },
+            { "id": "p5", "name": "revenue", "value": "", "type": "number" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "filter",
+      "name": "Keep Strong Sellers",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [1040, 500],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "f1", "leftValue": "={{ $json.units_sold }}", "rightValue": 0, "operator": { "type": "number", "operation": "gte" } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "sort",
+      "name": "Sort By Revenue",
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [1240, 500],
+      "parameters": {
+        "type": "simple",
+        "sortFieldsUI": { "sortField": [ { "fieldName": "revenue", "order": "descending" } ] },
+        "options": {}
+      }
+    },
+    {
+      "id": "aggregate",
+      "name": "Collect Rows",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1440, 500],
+      "parameters": { "aggregate": "aggregateAllItemData", "destinationFieldName": "top_dishes", "include": "allFields" }
+    },
+    {
+      "id": "summarise",
+      "name": "Write Readout",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1640, 500],
+      "parameters": { "promptType": "define", "text": "" }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1640, 720],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-gaps",
+      "name": "Gaps",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1600,
+        "height": 240,
+        "color": 5,
+        "content": "## Half-Built — 3 gaps\n\nThe seven nodes are wired correctly. Three fields are blank or set to a placeholder.\n\n1. **Add Revenue Column → `revenue`** is blank. Each dish row has `price` and `units_sold`. Write the expression that multiplies them: `={{ $json.price * $json.units_sold }}`. (This is a *computed column* — it runs once per row.)\n2. **Keep Strong Sellers → rightValue** is `0`, so every row passes. Change it so the Filter keeps only dishes that sold **at least 40 units**. (It's a number, not a string.)\n3. **Write Readout → prompt text** is blank. Write a prompt that turns the collected rows into a 2-3 sentence readout for stall owners. The rows arrive as `$json.top_dishes` (an array). The expression hints below show how to feed them in.\n\n**Expression hints for gap 3** — paste these into your prompt:\n- Total: `${{ $json.top_dishes.reduce((sum, d) => sum + d.revenue, 0) }}`\n- The list: `{{ $json.top_dishes.map(d => '- ' + d.dish + ': $' + d.revenue).join('\\n') }}`\n\n**Rule:** no Code node. Do the maths in nodes/expressions; let the LLM only narrate."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input (the table)", "type": "main", "index": 0 }]] },
+    "Set Input (the table)": { "main": [[{ "node": "Split Into Rows", "type": "main", "index": 0 }]] },
+    "Split Into Rows": { "main": [[{ "node": "Add Revenue Column", "type": "main", "index": 0 }]] },
+    "Add Revenue Column": { "main": [[{ "node": "Keep Strong Sellers", "type": "main", "index": 0 }]] },
+    "Keep Strong Sellers": { "main": [[{ "node": "Sort By Revenue", "type": "main", "index": 0 }]] },
+    "Sort By Revenue": { "main": [[{ "node": "Collect Rows", "type": "main", "index": 0 }]] },
+    "Collect Rows": { "main": [[{ "node": "Write Readout", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Write Readout", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

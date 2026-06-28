@@ -1,0 +1,129 @@
+{
+  "name": "BonusB1 Tabular Data — B Half-Built (File Upload, find the 3 gaps)",
+  "nodes": [
+    {
+      "id": "form",
+      "name": "On Form Submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [240, 500],
+      "webhookId": "b1-csv-upload-form",
+      "parameters": {
+        "formTitle": "Upload your sales CSV",
+        "formDescription": "CSV columns required: dish, stall, category, price, units_sold",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Sales CSV",
+              "fieldType": "text",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "parse",
+      "name": "Parse CSV Into Rows",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [460, 500],
+      "parameters": { "operation": "csv", "binaryPropertyName": "", "options": {} }
+    },
+    {
+      "id": "perrow",
+      "name": "Add Revenue Column",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [680, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "p1", "name": "dish", "value": "={{ $json.dish }}", "type": "string" },
+            { "id": "p2", "name": "stall", "value": "={{ $json.stall }}", "type": "string" },
+            { "id": "p3", "name": "category", "value": "={{ $json.category }}", "type": "string" },
+            { "id": "p4", "name": "units_sold", "value": "={{ Number($json.units_sold) }}", "type": "number" },
+            { "id": "p5", "name": "revenue", "value": "={{ Number($json.price) * Number($json.units_sold) }}", "type": "number" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "filter",
+      "name": "Keep Strong Sellers",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [900, 500],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "f1", "leftValue": "={{ $json.units_sold }}", "rightValue": 40, "operator": { "type": "number", "operation": "gte" } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "sort",
+      "name": "Sort By Revenue",
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [1120, 500],
+      "parameters": {
+        "type": "simple",
+        "sortFieldsUI": { "sortField": [ { "fieldName": "revenue", "order": "descending" } ] },
+        "options": {}
+      }
+    },
+    {
+      "id": "aggregate",
+      "name": "Collect Rows",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1340, 500],
+      "parameters": { "aggregate": "aggregateAllItemData", "destinationFieldName": "top_dishes", "include": "allFields" }
+    },
+    {
+      "id": "summarise",
+      "name": "Write Readout",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1560, 500],
+      "parameters": { "promptType": "define", "text": "" }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1560, 720],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-gaps",
+      "name": "Gaps",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1560,
+        "height": 300,
+        "color": 5,
+        "content": "## Half-Built (File Upload) — 3 gaps\n\nThe data pipeline (Add Revenue → Filter → Sort → Collect) is done. This variant is about getting an **uploaded file** in.\n\n1. **On Form Submission → the 'Sales CSV' field** is set to type **text**, so the user can't upload anything. Change its **field type to File** (and set Accepted File Types to `.csv` if you like). The form should then show a file picker.\n2. **Parse CSV Into Rows → Input Binary Field** is blank. It must name the binary property the form produces. **Run the form once, upload `sample-sales.csv`, then click On Form Submission → the Binary tab** and read the property name (often `Sales_CSV`). Type that exact name here.\n3. **Write Readout → prompt** is blank — same readout prompt as the embedded exercise. Rows are in `$json.top_dishes`. Hints:\n   - Total: `${{ $json.top_dishes.reduce((s, d) => s + d.revenue, 0) }}`\n   - List: `{{ $json.top_dishes.map(d => '- ' + d.dish + ': $' + d.revenue).join('\\n') }}`\n\n**To run:** click On Form Submission → open the Test URL → upload the CSV → submit. **No file / offline?** Use the embedded `B1-b-half-built.workflow.json`."
+      }
+    }
+  ],
+  "connections": {
+    "On Form Submission": { "main": [[{ "node": "Parse CSV Into Rows", "type": "main", "index": 0 }]] },
+    "Parse CSV Into Rows": { "main": [[{ "node": "Add Revenue Column", "type": "main", "index": 0 }]] },
+    "Add Revenue Column": { "main": [[{ "node": "Keep Strong Sellers", "type": "main", "index": 0 }]] },
+    "Keep Strong Sellers": { "main": [[{ "node": "Sort By Revenue", "type": "main", "index": 0 }]] },
+    "Sort By Revenue": { "main": [[{ "node": "Collect Rows", "type": "main", "index": 0 }]] },
+    "Collect Rows": { "main": [[{ "node": "Write Readout", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Write Readout", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

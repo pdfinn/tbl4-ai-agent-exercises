@@ -1,0 +1,225 @@
+{
+  "name": "BonusB6 SharePoint RAG — C Reference (live shape)",
+  "nodes": [
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [120, 40],
+      "parameters": {
+        "width": 1500,
+        "height": 230,
+        "color": 7,
+        "content": "## Bonus B6 — RAG over SharePoint proposals (Reference, live shape)\n\nRAG = **Retrieval-Augmented Generation.** You can't paste 200 PDF proposals into a prompt, so you do it in two phases:\n\n**Phase 1 — Ingest (run once, or on a schedule):** pull the PDFs from SharePoint → extract text → split into chunks → embed each chunk → store the vectors. This builds the **private local KB**.\n\n**Phase 2 — Query (every question):** embed the question → retrieve the most similar chunks from the store → hand ONLY those chunks to the LLM, which answers grounded and cited.\n\n```\nIngest:  SharePoint (Graph) → PDF→Text → Split → Embed → Vector Store (insert)\nQuery:   Question → Embed → Vector Store (retrieve top-k) → LLM (grounded) → Answer\n```\n\n**This file is the SHAPE, not a one-click run.** It needs an Azure app registration (for SharePoint) and an embedding model. To run today with neither, open `B6-c-reference-offline.workflow.json`."
+      }
+    },
+    {
+      "id": "note-ingest",
+      "name": "Phase 1 — Ingest",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [120, 300],
+      "parameters": {
+        "width": 740,
+        "height": 470,
+        "color": 4,
+        "content": "## Phase 1 — Ingest into the private KB\n\n**SharePoint is NOT a published-doc URL (unlike Bonus B3).** It is reached through the **Microsoft Graph API**, which needs an **Azure AD app registration**:\n\n1. Azure Portal → App registrations → New. Note the *tenant ID* and *client ID*.\n2. Add a client secret.\n3. API permissions → Microsoft Graph → `Sites.Read.All` / `Files.Read.All` (application). **Grant admin consent.**\n4. In n8n, create a **Microsoft OAuth2 (or client-credentials)** credential, or call Graph with an HTTP Request node + a bearer token.\n\nThe two HTTP nodes below are the Graph calls: list the document library, then download each PDF. **Extract From File** turns the PDF binary into text; the **Vector Store (insert)** embeds and stores it.\n\nRun this branch once (or on a Schedule Trigger nightly) to keep the KB fresh."
+      }
+    },
+    {
+      "id": "note-query",
+      "name": "Phase 2 — Query",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [880, 300],
+      "parameters": {
+        "width": 740,
+        "height": 470,
+        "color": 5,
+        "content": "## Phase 2 — Answer a question, grounded\n\nThe user's question (`Set Question`) is embedded with the **same** model used at ingest, then the **Vector Store (retrieve)** returns the top-k most similar chunks. **Aggregate** stitches them into one context block, and the **LLM** answers using only that context — citing each proposal.\n\n**Embedding model:** `ollama pull nomic-embed-text` (then set it on both Embeddings nodes). The chat model stays `llama3.1:8b`.\n\n**Same model at ingest and query** — vectors from different models are not comparable.\n\n**Vector store:** this uses n8n's in-memory store (fine for a class; lives in the n8n process). For a real private KB use **Qdrant** (self-hostable in Docker, free) or pgvector, so the index survives restarts."
+      }
+    },
+
+    {
+      "id": "manual-ingest",
+      "name": "Run Ingestion (one-time)",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 560],
+      "parameters": {}
+    },
+    {
+      "id": "graph-list",
+      "name": "List Proposals (SharePoint/Graph)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [380, 560],
+      "parameters": {
+        "method": "GET",
+        "url": "https://graph.microsoft.com/v1.0/sites/{site-id}/drives/{drive-id}/root:/Proposals:/children",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOAuth2Api",
+        "options": {}
+      }
+    },
+    {
+      "id": "graph-download",
+      "name": "Download PDF (Graph)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [560, 560],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://graph.microsoft.com/v1.0/sites/{site-id}/drives/{drive-id}/items/{{ $json.id }}/content",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOAuth2Api",
+        "options": { "response": { "response": { "responseFormat": "file" } } }
+      }
+    },
+    {
+      "id": "extract",
+      "name": "PDF → Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [740, 560],
+      "parameters": { "operation": "pdf", "options": {} }
+    },
+    {
+      "id": "store-insert",
+      "name": "Vector Store (insert)",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.1,
+      "position": [740, 360],
+      "parameters": { "mode": "insert", "memoryKey": "proposals-kb" }
+    },
+    {
+      "id": "loader",
+      "name": "Proposal Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [620, 200],
+      "parameters": { "dataType": "binary", "options": {} }
+    },
+    {
+      "id": "splitter",
+      "name": "Split into chunks",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [620, 60],
+      "parameters": { "chunkSize": 1000, "chunkOverlap": 150, "options": {} }
+    },
+    {
+      "id": "embed-ingest",
+      "name": "Embeddings (ingest)",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [880, 200],
+      "parameters": { "model": "nomic-embed-text:latest" }
+    },
+
+    {
+      "id": "manual-query",
+      "name": "Ask a Question",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [960, 620],
+      "parameters": {}
+    },
+    {
+      "id": "set-q",
+      "name": "Set Question",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 620],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "q1", "name": "question", "value": "Compare our past proposals by country-stability constraints versus impact metrics. Which carry the highest political-security risk relative to expected impact?", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "store-load",
+      "name": "Vector Store (retrieve)",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.1,
+      "position": [1300, 620],
+      "parameters": {
+        "mode": "load",
+        "memoryKey": "proposals-kb",
+        "prompt": "={{ $json.question }}",
+        "topK": 8
+      }
+    },
+    {
+      "id": "embed-query",
+      "name": "Embeddings (query)",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [1300, 800],
+      "parameters": { "model": "nomic-embed-text:latest" }
+    },
+    {
+      "id": "aggregate",
+      "name": "Stitch Context",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1480, 620],
+      "parameters": { "aggregate": "aggregateAllItemData", "destinationFieldName": "chunks", "include": "allFields" }
+    },
+    {
+      "id": "synthesise",
+      "name": "Compare Proposals (grounded)",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1660, 620],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a portfolio analyst. Answer using ONLY the retrieved chunks below — no outside knowledge, no invented numbers. Cite each claim with its proposal id. If the chunks are insufficient for any part, say so.\n\nProduce a Markdown table (Proposal | Country | Political-security risk | Headline impact metric) then a 3-4 sentence risk-vs-impact judgement.\n\nQuestion:\n{{ $('Set Question').item.json.question }}\n\nRetrieved chunks:\n{{ $json.chunks.map(c => c.document ? c.document.pageContent : c.pageContent || c.text).join('\\n\\n---\\n\\n') }}"
+      }
+    },
+    {
+      "id": "chat",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1660, 800],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "answer",
+      "name": "Answer",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1840, 620],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "answer", "value": "={{ $json.text }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Run Ingestion (one-time)": { "main": [[{ "node": "List Proposals (SharePoint/Graph)", "type": "main", "index": 0 }]] },
+    "List Proposals (SharePoint/Graph)": { "main": [[{ "node": "Download PDF (Graph)", "type": "main", "index": 0 }]] },
+    "Download PDF (Graph)": { "main": [[{ "node": "PDF → Text", "type": "main", "index": 0 }]] },
+    "PDF → Text": { "main": [[{ "node": "Vector Store (insert)", "type": "main", "index": 0 }]] },
+    "Split into chunks": { "ai_textSplitter": [[{ "node": "Proposal Loader", "type": "ai_textSplitter", "index": 0 }]] },
+    "Proposal Loader": { "ai_document": [[{ "node": "Vector Store (insert)", "type": "ai_document", "index": 0 }]] },
+    "Embeddings (ingest)": { "ai_embedding": [[{ "node": "Vector Store (insert)", "type": "ai_embedding", "index": 0 }]] },
+
+    "Ask a Question": { "main": [[{ "node": "Set Question", "type": "main", "index": 0 }]] },
+    "Set Question": { "main": [[{ "node": "Vector Store (retrieve)", "type": "main", "index": 0 }]] },
+    "Vector Store (retrieve)": { "main": [[{ "node": "Stitch Context", "type": "main", "index": 0 }]] },
+    "Embeddings (query)": { "ai_embedding": [[{ "node": "Vector Store (retrieve)", "type": "ai_embedding", "index": 0 }]] },
+    "Stitch Context": { "main": [[{ "node": "Compare Proposals (grounded)", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Compare Proposals (grounded)", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

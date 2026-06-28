@@ -1,0 +1,155 @@
+{
+  "name": "BonusB2 Review Classifier — C Reference",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input (the reviews)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "i1",
+              "name": "reviews",
+              "value": "=[\n  { \"author\": \"Wei Ling\", \"rating\": 5, \"review\": \"Best chicken rice in the east, hands down. The chilli is fragrant and the queue moves fast. Auntie even remembered my order.\" },\n  { \"author\": \"Marcus T.\", \"rating\": 2, \"review\": \"Waited 35 minutes and the rice was cold by the time I got it. Staff seemed overwhelmed at lunch. Taste was fine but not worth that wait.\" },\n  { \"author\": \"Priya\", \"rating\": 1, \"review\": \"Found a long hair in my laksa and when I pointed it out they just shrugged. Absolutely not coming back.\" },\n  { \"author\": \"Daniel L.\", \"rating\": 4, \"review\": \"Solid char kway teow, good wok hei. A bit oily for my taste but that is kind of the point. Cash only, bring small notes.\" },\n  { \"author\": \"Hafiz\", \"rating\": 3, \"review\": \"It is okay lah. Nothing special, nothing bad. Prices have crept up though — used to be cheaper last year.\" },\n  { \"author\": \"Jocelyn\", \"rating\": 5, \"review\": \"Came for the kaya toast and stayed for the kopi. Cosy corner stall, friendly uncle, very nostalgic vibes.\" },\n  { \"author\": \"Ahmad R.\", \"rating\": 1, \"review\": \"Overpriced and bland. Seven dollars for a tiny portion of prata that was soggy in the middle. Disappointed.\" },\n  { \"author\": \"Chloe\", \"rating\": 4, \"review\": \"Lovely chendol, not too sweet, generous on the gula melaka. Seating is cramped but the dessert makes up for it.\" },\n  { \"author\": \"Ben\", \"rating\": 2, \"review\": \"Tables were dirty and nobody cleared them for ages. Food was average. Hygiene really let it down for me.\" },\n  { \"author\": \"Siti\", \"rating\": 5, \"review\": \"My go-to teh tarik every morning. Consistent, hot, and the uncle pulls it properly. Cannot complain at all.\" }\n]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "split",
+      "name": "Split Reviews",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [640, 500],
+      "parameters": { "fieldToSplitOut": "reviews", "options": {} }
+    },
+    {
+      "id": "classify",
+      "name": "Classify Sentiment",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [840, 500],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Classify the sentiment of this customer review as EXACTLY ONE WORD from this list: POSITIVE, NEGATIVE, or NEUTRAL.\n\nRules:\n- POSITIVE = the customer is happy overall.\n- NEGATIVE = the customer is unhappy, complaining, or would not return.\n- NEUTRAL = mixed or indifferent; no strong feeling either way.\n- Output one word, in capitals. No explanation, no punctuation, no preamble.\n\nReview:\n{{ $json.review }}"
+      }
+    },
+    {
+      "id": "tag",
+      "name": "Tag Review",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1040, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "t1", "name": "author", "value": "={{ $('Split Reviews').item.json.author }}", "type": "string" },
+            { "id": "t2", "name": "rating", "value": "={{ $('Split Reviews').item.json.rating }}", "type": "number" },
+            { "id": "t3", "name": "review", "value": "={{ $('Split Reviews').item.json.review }}", "type": "string" },
+            { "id": "t4", "name": "sentiment", "value": "={{ $json.text.trim() }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "filter",
+      "name": "Keep Negative Only",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [1240, 500],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "f1", "leftValue": "={{ $json.sentiment }}", "rightValue": "NEGATIVE", "operator": { "type": "string", "operation": "contains" } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "collect",
+      "name": "Collect Complaints",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1440, 500],
+      "parameters": { "aggregate": "aggregateAllItemData", "destinationFieldName": "flagged", "include": "allFields" }
+    },
+    {
+      "id": "summarise",
+      "name": "Summarise Complaints",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1640, 500],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Below are the customer reviews that were classified NEGATIVE. Write a 2-3 sentence summary for the stall owner: what are the recurring complaints, and which one should they fix first? Plain prose, no preamble.\n\nNegative reviews ({{ $json.flagged.length }} of them):\n{{ $json.flagged.map(r => '- ' + r.author + ' (' + r.rating + '★): ' + r.review).join('\\n') }}"
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1040, 720],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1600,
+        "height": 220,
+        "color": 7,
+        "content": "## Bonus B2 — Classify reviews, then filter (Reference)\n\nThe same tabular spine as Bonus B1, but with an **LLM classifier running once per row** in the middle.\n\n```\nReviews (array) → Split Reviews → Classify Sentiment → Tag Review → Keep Negative Only → Collect Complaints → Summarise (LLM)\n                  (one item/review)  (LLM, one word)     (attach tag)   (Filter)             (Aggregate)         (what to fix first)\n```\n\n**Two LLM roles, both narrow.** The first is a *classifier* — one word out, so a node can route/filter on it. The second is a *summariser*. Neither is a chatbot. That one-word discipline is what makes the Filter downstream possible."
+      }
+    },
+    {
+      "id": "note-scraping",
+      "name": "Why not scrape Google?",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [640, 760],
+      "parameters": {
+        "width": 980,
+        "height": 230,
+        "color": 3,
+        "content": "## \"But I wanted to scrape a Google reviews page\"\n\nWe deliberately **don't**. Three honest reasons:\n\n1. **It doesn't work with a plain fetch.** Google Maps reviews are rendered by JavaScript. An HTTP Request gets a page of script, not review text.\n2. **It's against Google's Terms of Service.** The supported route is the **Google Places API** — which needs a billing-enabled key (not free, not for an intro class).\n3. **The lesson is identical either way.** Classify + filter + summarise is the same whether the rows came from a live scrape, an API, or this fixture.\n\nWant to practise *real* scraping honestly? Point an HTTP Request at a sandbox built for it — `quotes.toscrape.com` or `books.toscrape.com` — and use the **HTML Extract** node. Then feed the rows into this exact pipeline."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input (the reviews)", "type": "main", "index": 0 }]] },
+    "Set Input (the reviews)": { "main": [[{ "node": "Split Reviews", "type": "main", "index": 0 }]] },
+    "Split Reviews": { "main": [[{ "node": "Classify Sentiment", "type": "main", "index": 0 }]] },
+    "Classify Sentiment": { "main": [[{ "node": "Tag Review", "type": "main", "index": 0 }]] },
+    "Tag Review": { "main": [[{ "node": "Keep Negative Only", "type": "main", "index": 0 }]] },
+    "Keep Negative Only": { "main": [[{ "node": "Collect Complaints", "type": "main", "index": 0 }]] },
+    "Collect Complaints": { "main": [[{ "node": "Summarise Complaints", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": {
+      "ai_languageModel": [[
+        { "node": "Classify Sentiment", "type": "ai_languageModel", "index": 0 },
+        { "node": "Summarise Complaints", "type": "ai_languageModel", "index": 0 }
+      ]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

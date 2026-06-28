@@ -1,0 +1,25 @@
+Project Laksa — Weekly Sync
+Date: 3 June 2026
+Present: Wei Ling (PM), Daniel (Eng), Priya (Design), Marcus (Ops)
+
+Notes:
+We reviewed the hawker-stall onboarding flow. Priya walked through the new
+menu-photo upload screen; feedback was positive but the empty state is
+confusing. Daniel flagged that the image API times out for files over 8MB and
+we have no client-side resize yet. Marcus raised that three stalls in the
+Maxwell pilot still have not received their QR table-tents, which is blocking
+their go-live.
+
+Decisions:
+- We will ship the photo-upload screen in the 12 June release, with a redesigned
+  empty state.
+- Client-side image resize is now a release blocker; it goes in before launch.
+- The Maxwell pilot go-live moves from 10 June to 17 June to absorb the delay.
+
+Action items:
+- Priya to redesign the empty state and share mockups by 6 June.
+- Daniel to add client-side resize (max 1600px) and retest the 8MB case by 10 June.
+- Marcus to chase the printer on the QR table-tents and confirm delivery by 5 June.
+- Wei Ling to update the launch comms once the new pilot date is locked.
+
+Next sync: 10 June 2026, 4pm.

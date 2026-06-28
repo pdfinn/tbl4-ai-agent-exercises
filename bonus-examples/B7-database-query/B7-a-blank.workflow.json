@@ -1,0 +1,41 @@
+{
+  "name": "BonusB7 Tender Pricing — A Blank",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [260, 440],
+      "parameters": {}
+    },
+    {
+      "id": "note-goal",
+      "name": "Goal",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 580,
+        "height": 300,
+        "color": 7,
+        "content": "## Bonus B7 — Bulk tender pricing (build it)\n\nAnswer: *\"check bulk tender pricing for 100 Qty of product code ABC1233-019\"* from a Customer Product DB.\n\n**This is NOT RAG.** Pricing must be exact and auditable, so you **query** the data and **compute** the price — the LLM only writes the quote.\n\n```\nRequest (code + qty) → Look up + price → found? → Write quote (LLM) → Quote\n                                            └ no → Not found\n```\n\nNodes compute, the LLM narrates. Build the offline shape, then read the README for the live Postgres version and the security/governance answers."
+      }
+    },
+    {
+      "id": "note-build",
+      "name": "Build steps",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 380],
+      "parameters": {
+        "width": 580,
+        "height": 380,
+        "color": 4,
+        "content": "## Build these nodes\n\n1. **Set (\"Incoming Request + Catalogue\")** — an object `request` (`product_code`, `qty`, `customer`) and an array `catalogue` (paste `sample-products.json`).\n\n2. **Code (\"Look Up + Price\")** — find the product by code; if missing, return `found:false`. Else pick the highest bulk tier the qty meets, compute net unit price, line total, savings. (Stands in for `SELECT ... WHERE product_code = $1`.)\n\n3. **IF (\"Product found?\")** — `{{ $json.found }}` is true → quote; false → not-found.\n\n4. **Basic LLM Chain (\"Write the Quote\")** + **Ollama Chat Model** — narrate the figures. Tell it, in capitals, NOT to do arithmetic.\n\n5. **Set (\"Quote\")** and **Set (\"Not Found Message\")** for the two branches.\n\n**Model:** `llama3.1:8b`. **Credential:** `Ollama (local)`. Stuck? See `B7-c-reference-offline.workflow.json`."
+      }
+    }
+  ],
+  "connections": {},
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

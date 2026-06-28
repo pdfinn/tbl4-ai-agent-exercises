@@ -1,0 +1,152 @@
+{
+  "name": "BonusB1 Tabular Data — C Reference",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input (the table)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "i1",
+              "name": "rows",
+              "value": "=[\n  { \"dish\": \"Chicken Rice\", \"stall\": \"Tian Tian\", \"category\": \"Main\", \"price\": 5.5, \"units_sold\": 120 },\n  { \"dish\": \"Char Kway Teow\", \"stall\": \"Hill Street\", \"category\": \"Main\", \"price\": 6.0, \"units_sold\": 85 },\n  { \"dish\": \"Laksa\", \"stall\": \"328 Katong\", \"category\": \"Main\", \"price\": 7.0, \"units_sold\": 64 },\n  { \"dish\": \"Roti Prata\", \"stall\": \"Sin Ming\", \"category\": \"Main\", \"price\": 4.0, \"units_sold\": 98 },\n  { \"dish\": \"Kaya Toast Set\", \"stall\": \"Ya Kun\", \"category\": \"Main\", \"price\": 5.0, \"units_sold\": 41 },\n  { \"dish\": \"Teh Tarik\", \"stall\": \"Sin Ming\", \"category\": \"Drink\", \"price\": 1.8, \"units_sold\": 210 },\n  { \"dish\": \"Kopi O\", \"stall\": \"Ya Kun\", \"category\": \"Drink\", \"price\": 1.5, \"units_sold\": 175 },\n  { \"dish\": \"Sugarcane Juice\", \"stall\": \"Maxwell Corner\", \"category\": \"Drink\", \"price\": 2.5, \"units_sold\": 52 },\n  { \"dish\": \"Chendol\", \"stall\": \"328 Katong\", \"category\": \"Dessert\", \"price\": 3.5, \"units_sold\": 38 },\n  { \"dish\": \"Ice Kacang\", \"stall\": \"Maxwell Corner\", \"category\": \"Dessert\", \"price\": 3.0, \"units_sold\": 29 }\n]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "split",
+      "name": "Split Into Rows",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [640, 500],
+      "parameters": { "fieldToSplitOut": "rows", "options": {} }
+    },
+    {
+      "id": "perrow",
+      "name": "Add Revenue Column",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [840, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "p1", "name": "dish", "value": "={{ $json.dish }}", "type": "string" },
+            { "id": "p2", "name": "stall", "value": "={{ $json.stall }}", "type": "string" },
+            { "id": "p3", "name": "category", "value": "={{ $json.category }}", "type": "string" },
+            { "id": "p4", "name": "units_sold", "value": "={{ $json.units_sold }}", "type": "number" },
+            { "id": "p5", "name": "revenue", "value": "={{ $json.price * $json.units_sold }}", "type": "number" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "filter",
+      "name": "Keep Strong Sellers",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [1040, 500],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "f1", "leftValue": "={{ $json.units_sold }}", "rightValue": 40, "operator": { "type": "number", "operation": "gte" } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "sort",
+      "name": "Sort By Revenue",
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [1240, 500],
+      "parameters": {
+        "type": "simple",
+        "sortFieldsUI": { "sortField": [ { "fieldName": "revenue", "order": "descending" } ] },
+        "options": {}
+      }
+    },
+    {
+      "id": "aggregate",
+      "name": "Collect Rows",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1440, 500],
+      "parameters": { "aggregate": "aggregateAllItemData", "destinationFieldName": "top_dishes", "include": "allFields" }
+    },
+    {
+      "id": "summarise",
+      "name": "Write Readout",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1640, 500],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a sales analyst. Below is a list of dishes that each sold at least 40 units, sorted by revenue (highest first). The total revenue figure is computed for you — do not recompute it.\n\nWrite a 2-3 sentence readout for the stall owners: name the top earner, note any pattern you see across categories, and state the total revenue. Plain prose, no bullet points, no preamble.\n\nTotal revenue across these dishes: ${{ $json.top_dishes.reduce((sum, d) => sum + d.revenue, 0) }}\n\nDishes:\n{{ $json.top_dishes.map(d => '- ' + d.dish + ' (' + d.stall + ', ' + d.category + '): $' + d.revenue + ' from ' + d.units_sold + ' sold').join('\\n') }}"
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1640, 720],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1600,
+        "height": 200,
+        "color": 7,
+        "content": "## Bonus B1 — Working with tabular data (Reference)\n\nn8n is built for tables. Every node passes a list of **items**, and one item = one row. The whole exercise is about that idea.\n\n```\nTable (array) → Split Into Rows → Add Revenue Column → Keep Strong Sellers → Sort By Revenue → Collect Rows → Write Readout (LLM)\n                (one item per row)   (computed column)    (Filter)              (Sort)            (Aggregate)    (narrate, don't calculate)\n```\n\n**The lesson:** do the *maths* with nodes and expressions (revenue, totals, filtering, sorting) — they are exact and repeatable. Use the LLM only to *narrate* the result. An LLM asked to add up a column will sometimes get it wrong; a Set node never does."
+      }
+    },
+    {
+      "id": "note-nodes",
+      "name": "The four tabular nodes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [640, 760],
+      "parameters": {
+        "width": 820,
+        "height": 200,
+        "color": 4,
+        "content": "## The four tabular primitives\n\n- **Split Out** — turns one item holding an array into many items, one per element. After this node, click it and read the panel: 10 rows.\n- **Set (Add Revenue Column)** — adds a *computed column*. `={{ $json.price * $json.units_sold }}`. Runs once per row.\n- **Filter** — drops rows that fail a condition. Same condition editor as the IF node, but no branches: rows either pass or vanish.\n- **Sort** — orders the rows by a field.\n- **Aggregate** — the opposite of Split Out: collapses many rows back into one item with an array field (`top_dishes`), so the LLM can see them all at once."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input (the table)", "type": "main", "index": 0 }]] },
+    "Set Input (the table)": { "main": [[{ "node": "Split Into Rows", "type": "main", "index": 0 }]] },
+    "Split Into Rows": { "main": [[{ "node": "Add Revenue Column", "type": "main", "index": 0 }]] },
+    "Add Revenue Column": { "main": [[{ "node": "Keep Strong Sellers", "type": "main", "index": 0 }]] },
+    "Keep Strong Sellers": { "main": [[{ "node": "Sort By Revenue", "type": "main", "index": 0 }]] },
+    "Sort By Revenue": { "main": [[{ "node": "Collect Rows", "type": "main", "index": 0 }]] },
+    "Collect Rows": { "main": [[{ "node": "Write Readout", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Write Readout", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

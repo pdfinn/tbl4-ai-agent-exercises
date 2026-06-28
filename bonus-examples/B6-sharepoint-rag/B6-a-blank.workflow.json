@@ -1,0 +1,41 @@
+{
+  "name": "BonusB6 SharePoint RAG — A Blank",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [260, 460],
+      "parameters": {}
+    },
+    {
+      "id": "note-goal",
+      "name": "Goal",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 560,
+        "height": 300,
+        "color": 7,
+        "content": "## Bonus B6 — RAG over proposals (build it)\n\nAnswer a question by **retrieving** the most relevant proposal excerpts from a private knowledge base, then letting the LLM answer **grounded only on those** — with citations. This is Retrieval-Augmented Generation (RAG).\n\nBuild the offline shape (always runs, no embed model):\n\n```\nQuestion + KB → Retrieve top-k → Compare (LLM) → Answer\n```\n\nThen read the README for the live SharePoint + vector-store version and the three big questions your classmate asked (RAG? KB? cloud?)."
+      }
+    },
+    {
+      "id": "note-build",
+      "name": "Build steps",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 380],
+      "parameters": {
+        "width": 560,
+        "height": 360,
+        "color": 4,
+        "content": "## Build these four nodes\n\n1. **Set (\"Load KB + Question\")** — a string `question` and an array `proposals` (paste `sample-proposals.json`, or use the trimmed excerpts).\n\n2. **Code (\"Retrieve Relevant Proposals\")** — score each proposal by keyword overlap with the question, sort, keep top-k, and build a `context` string. (This stands in for a vector search.)\n\n3. **Basic LLM Chain (\"Compare Proposals\")** + **Ollama Chat Model** — answer using ONLY `context`, cite each `proposal_id`, output a comparison table + a risk-vs-impact judgement.\n\n4. **Set (\"Answer\")** — `answer` = `{{ $json.text }}`.\n\n**Model:** `llama3.1:8b`. **Credential:** `Ollama (local)`.\n\nStuck? `B6-c-reference-offline.workflow.json` is the worked solution."
+      }
+    }
+  ],
+  "connections": {},
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

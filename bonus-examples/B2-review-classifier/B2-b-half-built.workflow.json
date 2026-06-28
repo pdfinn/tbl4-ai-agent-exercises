@@ -1,0 +1,136 @@
+{
+  "name": "BonusB2 Review Classifier — B Half-Built (find the 3 gaps)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input (the reviews)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "i1",
+              "name": "reviews",
+              "value": "=[\n  { \"author\": \"Wei Ling\", \"rating\": 5, \"review\": \"Best chicken rice in the east, hands down. The chilli is fragrant and the queue moves fast. Auntie even remembered my order.\" },\n  { \"author\": \"Marcus T.\", \"rating\": 2, \"review\": \"Waited 35 minutes and the rice was cold by the time I got it. Staff seemed overwhelmed at lunch. Taste was fine but not worth that wait.\" },\n  { \"author\": \"Priya\", \"rating\": 1, \"review\": \"Found a long hair in my laksa and when I pointed it out they just shrugged. Absolutely not coming back.\" },\n  { \"author\": \"Daniel L.\", \"rating\": 4, \"review\": \"Solid char kway teow, good wok hei. A bit oily for my taste but that is kind of the point. Cash only, bring small notes.\" },\n  { \"author\": \"Hafiz\", \"rating\": 3, \"review\": \"It is okay lah. Nothing special, nothing bad. Prices have crept up though — used to be cheaper last year.\" },\n  { \"author\": \"Jocelyn\", \"rating\": 5, \"review\": \"Came for the kaya toast and stayed for the kopi. Cosy corner stall, friendly uncle, very nostalgic vibes.\" },\n  { \"author\": \"Ahmad R.\", \"rating\": 1, \"review\": \"Overpriced and bland. Seven dollars for a tiny portion of prata that was soggy in the middle. Disappointed.\" },\n  { \"author\": \"Chloe\", \"rating\": 4, \"review\": \"Lovely chendol, not too sweet, generous on the gula melaka. Seating is cramped but the dessert makes up for it.\" },\n  { \"author\": \"Ben\", \"rating\": 2, \"review\": \"Tables were dirty and nobody cleared them for ages. Food was average. Hygiene really let it down for me.\" },\n  { \"author\": \"Siti\", \"rating\": 5, \"review\": \"My go-to teh tarik every morning. Consistent, hot, and the uncle pulls it properly. Cannot complain at all.\" }\n]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "split",
+      "name": "Split Reviews",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [640, 500],
+      "parameters": { "fieldToSplitOut": "reviews", "options": {} }
+    },
+    {
+      "id": "classify",
+      "name": "Classify Sentiment",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [840, 500],
+      "parameters": { "promptType": "define", "text": "" }
+    },
+    {
+      "id": "tag",
+      "name": "Tag Review",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1040, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "t1", "name": "author", "value": "={{ $('Split Reviews').item.json.author }}", "type": "string" },
+            { "id": "t2", "name": "rating", "value": "={{ $('Split Reviews').item.json.rating }}", "type": "number" },
+            { "id": "t3", "name": "review", "value": "={{ $('Split Reviews').item.json.review }}", "type": "string" },
+            { "id": "t4", "name": "sentiment", "value": "={{ $json.text.trim() }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "filter",
+      "name": "Keep Negative Only",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [1240, 500],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "f1", "leftValue": "={{ $json.sentiment }}", "rightValue": "", "operator": { "type": "string", "operation": "contains" } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "collect",
+      "name": "Collect Complaints",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1440, 500],
+      "parameters": { "aggregate": "aggregateAllItemData", "destinationFieldName": "flagged", "include": "allFields" }
+    },
+    {
+      "id": "summarise",
+      "name": "Summarise Complaints",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1640, 500],
+      "parameters": { "promptType": "define", "text": "" }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1040, 720],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-gaps",
+      "name": "Gaps",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1600,
+        "height": 260,
+        "color": 5,
+        "content": "## Half-Built — 3 gaps\n\nThe eight nodes are wired correctly. Three fields are blank.\n\n1. **Classify Sentiment → prompt** is blank. Write a *narrow classifier* prompt: read the review and output EXACTLY ONE WORD — `POSITIVE`, `NEGATIVE`, or `NEUTRAL`. No explanation, no punctuation. The review text is at `{{ $json.review }}`. (Narrow output is what lets the Filter work later.)\n2. **Keep Negative Only → rightValue** is blank. Type the sentiment you want to keep: `NEGATIVE`. (The Filter uses `contains`, case-insensitive, so a stray newline from the model won't break it.)\n3. **Summarise Complaints → prompt** is blank. The negative reviews arrive aggregated at `$json.flagged`. Write a prompt asking for a 2-3 sentence summary of the recurring complaints and what to fix first.\n\n**Already done for you:** *Tag Review* recovers the original review through the LLM step using `{{ $('Split Reviews').item.json.review }}` — a cross-node reference to the matching row. Study it; this is how you keep a row's data after an LLM only returns `text`.\n\n**Hint for gap 3:** `{{ $json.flagged.map(r => '- ' + r.author + ': ' + r.review).join('\\n') }}`"
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input (the reviews)", "type": "main", "index": 0 }]] },
+    "Set Input (the reviews)": { "main": [[{ "node": "Split Reviews", "type": "main", "index": 0 }]] },
+    "Split Reviews": { "main": [[{ "node": "Classify Sentiment", "type": "main", "index": 0 }]] },
+    "Classify Sentiment": { "main": [[{ "node": "Tag Review", "type": "main", "index": 0 }]] },
+    "Tag Review": { "main": [[{ "node": "Keep Negative Only", "type": "main", "index": 0 }]] },
+    "Keep Negative Only": { "main": [[{ "node": "Collect Complaints", "type": "main", "index": 0 }]] },
+    "Collect Complaints": { "main": [[{ "node": "Summarise Complaints", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": {
+      "ai_languageModel": [[
+        { "node": "Classify Sentiment", "type": "ai_languageModel", "index": 0 },
+        { "node": "Summarise Complaints", "type": "ai_languageModel", "index": 0 }
+      ]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

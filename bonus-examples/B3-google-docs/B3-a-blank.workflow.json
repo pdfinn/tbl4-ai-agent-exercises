@@ -1,0 +1,67 @@
+{
+  "name": "BonusB3 Google Docs — A Blank (build the pipeline)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 420],
+      "parameters": {}
+    },
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 900,
+        "height": 200,
+        "color": 7,
+        "content": "## Bonus B3 — Read a Google Doc into a workflow\n\nYou do NOT need the Google Docs node, OAuth, or an API key. A *published* Google Doc can be fetched as plain text by URL — so this is just the **HTTP Request** node from Ex 00 / Ex 07.\n\n```\nDoc ID → Fetch Doc (HTTP, export?format=txt) → Extract with LLM → Result\n```\n\nRead-only: this reads a doc, it can't write one. (Writing needs the real node + a Service Account — see the README.)"
+      }
+    },
+    {
+      "id": "note-setup",
+      "name": "Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 290],
+      "parameters": {
+        "width": 560,
+        "height": 360,
+        "color": 3,
+        "content": "## First: publish a doc (~2 min)\n\n1. Open or create a Google Doc. (Paste in `sample-doc.txt` from this folder for ready-made meeting notes.)\n2. **Share → Anyone with the link → Viewer.**\n3. Copy the ID from the URL:\n   `docs.google.com/document/d/`**`THIS_PART`**`/edit`\n\nGet HTML back instead of your text? Sharing isn't on yet.\n\n**No Google account / offline?** Skip all this and open `B3-c-reference-offline.workflow.json` — it runs with the doc text baked into a Set node."
+      }
+    },
+    {
+      "id": "note-task",
+      "name": "Build it",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [800, 290],
+      "parameters": {
+        "width": 520,
+        "height": 360,
+        "color": 4,
+        "content": "## Build this\n\n1. **Set ('Set Input')** — a string field `doc_id`, your published doc's ID.\n2. **HTTP Request ('Fetch Doc')** — method GET, URL:\n   `=https://docs.google.com/document/d/{{ $('Set Input').item.json.doc_id }}/export?format=txt`\n   In **Options → Response → Response Format**, choose **Text**, and set the output field name to `doc_text`.\n3. **Basic LLM Chain ('Extract Action Items')** + **Ollama Chat Model** — read `{{ $json.doc_text }}` and pull the action items into a Markdown checklist (owner + due date).\n4. **Set ('Result')** — `action_items` = `{{ $json.text }}`.\n\n**Model:** `llama3.1:8b`. **Credential:** `Ollama (local)`."
+      }
+    },
+    {
+      "id": "note-ext",
+      "name": "Extension",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1360, 290],
+      "parameters": {
+        "width": 460,
+        "height": 360,
+        "color": 6,
+        "content": "## Extension — if you finish early\n\n- **Sheets, not Docs.** A published Google Sheet fetches as CSV at `.../export?format=csv`. Pair it with an **Extract From File** node and you've got Bonus B1's tabular pipeline, fed live from Google.\n- **Email the action items** to yourself (Ex 00 stage 3's Email node).\n- **Summarise + extract** in parallel (Ex 05): one branch writes a TL;DR, another lists action items, a Merge stitches them into one note.\n- **Write back (advanced).** To put the summary *into* a Doc, add the real Google Docs node with a Service Account credential. See the README for the setup."
+      }
+    }
+  ],
+  "connections": {},
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

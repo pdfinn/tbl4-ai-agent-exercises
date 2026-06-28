@@ -1,0 +1,85 @@
+{
+  "name": "BonusB4 Calendar Date Finder — A Blank (build the pipeline)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 460],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 460],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "requested_date", "value": "2026-06-03", "type": "string" },
+            { "id": "i2", "name": "busy_dates", "value": "=[\"2026-06-03\", \"2026-06-05\", \"2026-06-08\", \"2026-06-11\"]", "type": "array" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 40],
+      "parameters": {
+        "width": 1000,
+        "height": 220,
+        "color": 7,
+        "content": "## Bonus B4 — Check a date, else find an alternate\n\nThe routing/gate pattern (Ex 03/04) applied to **dates**. Someone asks to meet on a date; if the calendar (a `busy_dates` list) is free that day, confirm it — otherwise propose the next Monday or Tuesday afternoon that's free.\n\n```\nRequested date + busy list → Compute next Mon & Tue → Free? ─┬─ yes → Confirm ──┐\n                                                             └─ no  → Pick Alternate ┴→ Finalise → Reply (LLM)\n```\n\nThe new skill: n8n's built-in date library **Luxon** (`DateTime`, `.weekday`, `.plus()`, `.toFormat()`)."
+      }
+    },
+    {
+      "id": "note-task",
+      "name": "Build it",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 700],
+      "parameters": {
+        "width": 620,
+        "height": 360,
+        "color": 4,
+        "content": "## Build this\n\nThe input is given (`requested_date`, `busy_dates`). Build from there:\n\n1. **Set ('Compute Candidates')** — carry `requested_date` and `busy_dates` through, and add:\n   - `cand_mon` = next Monday after the requested date\n   - `cand_tue` = next Tuesday after the requested date\n   (Expressions in the orange note.)\n2. **IF ('Requested Date Free?')** — boolean condition `={{ !$json.busy_dates.includes($json.requested_date) }}`, operator *is true*. TRUE = free.\n3. **Set ('Confirm Requested')** on the TRUE branch — `status` = `confirmed`, `chosen_date` = the requested date.\n4. **Set ('Pick Alternate')** on the FALSE branch — choose `cand_mon` if free, else `cand_tue`, else `none`.\n5. **Set ('Finalise')** — both branches converge here; add `chosen_weekday` from `chosen_date`.\n6. **Basic LLM Chain ('Compose Reply')** + **Ollama** — write the human reply."
+      }
+    },
+    {
+      "id": "note-luxon",
+      "name": "Date expressions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [840, 700],
+      "parameters": {
+        "width": 620,
+        "height": 360,
+        "color": 3,
+        "content": "## The date expressions (boilerplate — paste these)\n\n`.weekday` is 1 = Monday … 7 = Sunday.\n\n**Next Monday after the requested date:**\n`={{ DateTime.fromISO($json.requested_date).plus({ days: (8 - DateTime.fromISO($json.requested_date).weekday) % 7 || 7 }).toFormat('yyyy-MM-dd') }}`\n\n**Next Tuesday:** same, but change the `8` to `9`.\n\n**Pick the alternate** (in 'Pick Alternate'):\n`={{ !$json.busy_dates.includes($json.cand_mon) ? $json.cand_mon : (!$json.busy_dates.includes($json.cand_tue) ? $json.cand_tue : 'none') }}`\n\n**Weekday name** (in 'Finalise'):\n`={{ $json.chosen_date === 'none' ? 'n/a' : DateTime.fromISO($json.chosen_date).toFormat('cccc') }}`\n\n**Why expressions, not the LLM?** Date maths must be exact. The LLM only writes the reply."
+      }
+    },
+    {
+      "id": "note-ext",
+      "name": "Rules & extension",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1480, 700],
+      "parameters": {
+        "width": 460,
+        "height": 360,
+        "color": 6,
+        "content": "## Rules\n\n- **No Code node** — Luxon lives inside `{{ }}` expressions.\n- **Test all three outcomes.** Edit `busy_dates`:\n  - Remove `2026-06-03` → requested date is free → CONFIRMED.\n  - Keep `2026-06-03` and `2026-06-08` busy → falls through to Tuesday → ALTERNATE.\n  - Add `2026-06-09` too → no Mon/Tue free → NONE.\n- **Model:** `llama3.1:8b`. **Credential:** `Ollama (local)`.\n\n## Extension\n\n- **Real calendar.** Swap the busy list for Google Calendar's *Get Many / free-busy* node (needs a credential). The routing logic is unchanged — that's the point.\n- **Add afternoon time.** Use `.set({ hour: 14 })` and propose '2pm'.\n- **Widen the search** when NONE: also try the following week."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

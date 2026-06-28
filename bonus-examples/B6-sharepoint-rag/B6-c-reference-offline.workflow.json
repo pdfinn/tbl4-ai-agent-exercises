@@ -1,0 +1,96 @@
+{
+  "name": "BonusB6 SharePoint RAG — C Reference (Offline)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 460],
+      "parameters": {}
+    },
+    {
+      "id": "kb",
+      "name": "Load KB + Question",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 460],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "q1", "name": "question", "value": "Please help me analyse our past PDF proposals by comparing their country-stability constraints against their impact metrics. Which proposals carry the highest political-security risk, and is the expected impact worth that risk?", "type": "string" },
+            { "id": "k1", "name": "proposals", "value": "=[\n  { \"proposal_id\": \"P-2023-014\", \"title\": \"Rural Solar Microgrids — Northern Kenya\", \"country\": \"Kenya\", \"year\": 2023, \"sector\": \"Energy access\", \"text\": \"Country stability constraints: Northern Kenya is broadly stable nationally but Turkana and Marsabit see periodic inter-communal conflict over grazing and water plus cross-border spillover. Political-security risk rated MODERATE; budget includes a community-liaison officer and conflict-sensitivity training. Currency risk LOW-MODERATE. Impact metrics: 21,000 households connected in 24 months; 90 businesses electrified; 14,000 tonnes CO2 avoided per year; +2 hours/day study time for children.\" },\n  { \"proposal_id\": \"P-2023-027\", \"title\": \"Maternal Health Clinics — Eastern DRC\", \"country\": \"Democratic Republic of the Congo\", \"year\": 2023, \"sector\": \"Health\", \"text\": \"Country stability constraints: North Kivu and Ituri are ACTIVE CONFLICT zones with armed-group activity, displacement and constrained access. Political-security risk rated HIGH; 25 percent security contingency, remote-managed construction. Currency and supply-chain risk HIGH. Impact metrics: 30 percent reduction in maternal mortality across 240,000 people; 18,000 skilled birth attendances per year; 95 percent obstetric cold-chain. Impact conditional on at least 70 percent site access per year.\" },\n  { \"proposal_id\": \"P-2024-003\", \"title\": \"Smallholder Irrigation Scale-up — Rural Vietnam\", \"country\": \"Vietnam\", \"year\": 2024, \"sector\": \"Agriculture\", \"text\": \"Country stability constraints: Vietnam is politically STABLE; principal constraints are environmental (saline intrusion, subsidence) not security. Political-security risk rated LOW. Currency risk LOW. Impact metrics: 6,500 farms improved in 18 months; +22 percent dry-season yield; -35 percent irrigation water per hectare; 4,000 households above the rural poverty line.\" },\n  { \"proposal_id\": \"P-2024-019\", \"title\": \"Girls' Secondary Education Bursaries — Northern Nigeria\", \"country\": \"Nigeria\", \"year\": 2024, \"sector\": \"Education\", \"text\": \"Country stability constraints: Kaduna, Katsina and Zamfara face SIGNIFICANT insecurity from banditry, kidnapping and school abductions. Political-security risk rated HIGH; design includes school-security stipends and a fallback to home-based learning kits. Currency risk HIGH after naira devaluation. Impact metrics: 14,000 girls retained through secondary; 80 percent grade-transition rate; +25 percent numeracy scores. Devaluation has already eroded per-girl bursary value by an estimated 18 percent.\" },\n  { \"proposal_id\": \"P-2024-031\", \"title\": \"Coastal Mangrove Restoration — Eastern Indonesia\", \"country\": \"Indonesia\", \"year\": 2024, \"sector\": \"Climate adaptation\", \"text\": \"Country stability constraints: Indonesia is broadly STABLE; target areas have low security risk but remoteness and complex land tenure. Political-security risk rated LOW-MODERATE, driven by tenure disputes not violence. Currency risk MODERATE. Impact metrics: 1,800 hectares restored at 70 percent survival; 540,000 tonnes CO2 over 20 years; 4,200 households with improved storm protection; 600 nursery and planting jobs.\" }\n]", "type": "array" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "retrieve",
+      "name": "Retrieve Relevant Proposals",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 460],
+      "parameters": {
+        "jsCode": "// OFFLINE STAND-IN for a vector search.\n// Real RAG embeds the question and every proposal chunk, then ranks by cosine\n// similarity. Here we rank by plain keyword overlap so the demo runs with NO\n// embedding model — the SHAPE (retrieve top-k, then ground the LLM on them) is\n// identical. Swap this node for a Vector Store (retrieve) node to go semantic.\n\nconst input = $input.first().json;\nconst question = input.question;\nconst proposals = input.proposals;\n\nconst stop = new Set(['the','and','for','our','past','with','that','this','their','please','help','analyse','analyze','which','what','carry','worth','against','compare','comparing','their']);\nconst qTerms = (question.toLowerCase().match(/[a-z]+/g) || [])\n  .filter(t => t.length > 3 && !stop.has(t));\n\nconst scored = proposals.map(p => {\n  const hay = `${p.title} ${p.text} ${p.country} ${p.sector}`.toLowerCase();\n  let score = 0;\n  for (const t of qTerms) { if (hay.includes(t)) score++; }\n  return { ...p, _score: score };\n});\n\nscored.sort((a, b) => b._score - a._score);\n\nconst TOP_K = 5; // a cross-proposal comparison wants the whole corpus; a narrow\n                 // question (\"the Kenya solar proposal\") would use TOP_K = 1-2.\nconst top = scored.slice(0, TOP_K);\n\nconst context = top\n  .map(p => `### ${p.proposal_id} — ${p.title} (${p.country}, ${p.year})\\n${p.text}`)\n  .join('\\n\\n');\n\nreturn [{ json: {\n  question,\n  retrieved: top.map(p => ({ proposal_id: p.proposal_id, country: p.country, score: p._score })),\n  context\n} }];"
+      }
+    },
+    {
+      "id": "synthesise",
+      "name": "Compare Proposals (grounded)",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [900, 460],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a portfolio analyst. Answer the question using ONLY the retrieved proposal excerpts below — do not use outside knowledge, and do not invent numbers. Cite every claim with the proposal_id in brackets, e.g. [P-2023-027]. If the excerpts do not contain enough to answer part of the question, say so plainly.\n\nProduce:\n1. A Markdown table with columns: Proposal | Country | Political-security risk | Headline impact metric.\n2. A 3-4 sentence judgement on which proposals carry the highest risk relative to their expected impact.\n\nQuestion:\n{{ $json.question }}\n\nRetrieved proposal excerpts:\n{{ $json.context }}"
+      }
+    },
+    {
+      "id": "output",
+      "name": "Answer",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1140, 460],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "o1", "name": "answer", "value": "={{ $json.text }}", "type": "string" },
+            { "id": "o2", "name": "retrieved", "value": "={{ $('Retrieve Relevant Proposals').item.json.retrieved }}", "type": "array" },
+            { "id": "o3", "name": "mode", "value": "offline (lexical retriever stand-in for vector search)", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [900, 680],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-offline",
+      "name": "Offline mode",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1100,
+        "height": 320,
+        "color": 6,
+        "content": "## Bonus B6 — RAG over proposals (Offline variant)\n\nA zero-setup fallback to `B6-c-reference.workflow.json`. Two things are mocked so it always runs:\n\n- **The source.** SharePoint (Microsoft Graph + Azure app registration) is replaced by a **Set node** holding five proposal excerpts — the \"private local copy of the KB\".\n- **The retriever.** The vector store + embedding model is replaced by a **Code node** doing keyword overlap. The *shape* is identical: retrieve the most relevant excerpts, then let the LLM answer grounded ONLY on them.\n\n```\nQuestion + KB → Retrieve top-k (stand-in) → Compare (LLM, grounded + cited) → Answer\n```\n\n**Why a stand-in?** Real semantic retrieval needs an embedding model (`ollama pull nomic-embed-text`) and a vector store node. The keyword version teaches *retrieve-then-ground* with nothing to install. Go live with `B6-c-reference.workflow.json` once you have SharePoint + an embed model.\n\n**Teaching point — top-k vs \"compare ALL\":** a cross-proposal comparison wants the whole corpus, so `TOP_K = 5` here returns everything. Pure top-k RAG can *miss* documents on \"compare all of X\" questions — see the README on metadata filtering and map-reduce."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Load KB + Question", "type": "main", "index": 0 }]] },
+    "Load KB + Question": { "main": [[{ "node": "Retrieve Relevant Proposals", "type": "main", "index": 0 }]] },
+    "Retrieve Relevant Proposals": { "main": [[{ "node": "Compare Proposals (grounded)", "type": "main", "index": 0 }]] },
+    "Compare Proposals (grounded)": { "main": [[{ "node": "Answer", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Compare Proposals (grounded)", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

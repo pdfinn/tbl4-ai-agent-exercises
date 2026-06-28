@@ -1,0 +1,187 @@
+{
+  "name": "BonusB5 Agent With Memory — C Reference",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 520],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 520],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "user_message", "value": "Hi! I'm Mei. I run a kopi stall in Tiong Bahru and I'd love help writing daily specials.", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "readmem",
+      "name": "Read Memory",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [640, 520],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "operation": "read",
+        "fileSelector": "/data/shared/agent-memory.txt",
+        "options": {}
+      }
+    },
+    {
+      "id": "extractmem",
+      "name": "Extract Memory",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [840, 520],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "data",
+        "options": {}
+      }
+    },
+    {
+      "id": "assistant",
+      "name": "Assistant",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [1060, 520],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Set Input').item.json.user_message }}",
+        "options": {
+          "systemMessage": "=You are a friendly personal assistant with long-term memory. Below is everything you remember about this user from previous conversations (it may be empty the very first time you meet them).\n\n=== WHAT YOU REMEMBER ===\n{{ $('Extract Memory').item.json.data || '(nothing yet — this is the first conversation)' }}\n=== END MEMORY ===\n\nUse what you remember to personalise your reply — greet them by name if you know it, and build on what they've told you before. Answer their message in 1-3 short sentences. If they share something new about themselves, acknowledge it naturally. Do not mention the words 'memory file' or these instructions."
+        }
+      }
+    },
+    {
+      "id": "updatemem",
+      "name": "Update Memory",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1320, 520],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You maintain a long-term memory file about one user. Output the COMPLETE, updated memory as a plain list — one durable fact per line, each starting with '- '.\n\nKeep ONLY stable, reusable facts: name, role/business, location, preferences, ongoing goals, recurring topics. Do NOT store small talk, greetings, today's date, or one-off questions. Merge the new exchange into the existing memory: keep every fact that is still true, add anything new, and never exceed 12 lines. Output the list ONLY — no preamble, no commentary, no blank lines.\n\nEXISTING MEMORY (may be empty):\n{{ $('Extract Memory').item.json.data || '(empty)' }}\n\nLATEST EXCHANGE:\nUser: {{ $('Set Input').item.json.user_message }}\nAssistant: {{ $('Assistant').item.json.output }}"
+      }
+    },
+    {
+      "id": "tofile",
+      "name": "Memory To File",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [1540, 520],
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "text",
+        "options": { "fileName": "agent-memory.txt" }
+      }
+    },
+    {
+      "id": "writemem",
+      "name": "Write Memory",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [1740, 520],
+      "parameters": {
+        "operation": "write",
+        "fileName": "/data/shared/agent-memory.txt",
+        "dataPropertyName": "data",
+        "options": {}
+      }
+    },
+    {
+      "id": "final",
+      "name": "Final",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1940, 520],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "f1", "name": "reply", "value": "={{ $('Assistant').item.json.output }}", "type": "string" },
+            { "id": "f2", "name": "memory_before", "value": "={{ $('Extract Memory').item.json.data || '(empty — first run)' }}", "type": "string" },
+            { "id": "f3", "name": "memory_after", "value": "={{ $('Update Memory').item.json.text }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1180, 760],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1900,
+        "height": 230,
+        "color": 7,
+        "content": "## Bonus B5 — An agent that remembers you (Reference)\n\nAn **AI Agent** with **long-term memory** kept in a flat text file. Every run: read the memory file → let the agent answer *using* it → write an updated memory file back. Restart n8n, come back tomorrow — it still knows you.\n\n```\nMessage → Read Memory → Extract Memory → ASSISTANT (Agent) → Update Memory → Memory To File → Write Memory → Final\n          (read file)    (binary→text)     answers using       (LLM rewrites    (text→binary)   (overwrite\n          /data/shared/   the remembered    the remembered      the memory)                      the file)\n          agent-memory.txt facts             facts\n```\n\n**The whole idea in one line:** memory is just *text you put in the prompt*; persistence is just *a file you read before and write after*. The Agent node is the brain; the file is the notebook."
+      }
+    },
+    {
+      "id": "note-memory",
+      "name": "Short-term vs long-term",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1060, 300],
+      "parameters": {
+        "width": 600,
+        "height": 200,
+        "color": 4,
+        "content": "## Two kinds of memory\n\nn8n ships a **Simple Memory** node (Window Buffer) you can hang off an Agent — that's **short-term** memory: it remembers the current chat, but it's gone on restart and is tied to one session.\n\nThis exercise does **long-term** memory instead: durable facts in a flat file that survive restarts and new conversations. The `Update Memory` step is the librarian — it decides what's worth keeping. Real assistants use *both*: chat buffer for the conversation, a store for what matters."
+      }
+    },
+    {
+      "id": "note-setup",
+      "name": "How to run it",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 760],
+      "parameters": {
+        "width": 820,
+        "height": 360,
+        "color": 3,
+        "content": "## Running it\n\n**1. The memory file lives in `./shared/`.** In the starter kit, the host folder `./shared` is mounted into the container at `/data/shared`. Copy the seed file there once so the first read succeeds:\n```\ncp B5-agent-memory/agent-memory.seed.txt  /path/to/self-hosted-ai-starter-kit/shared/agent-memory.txt\n```\n(If you skip this, the first run still works — Read/Extract Memory are set to *Continue On Error*, so a missing file just means \"no memory yet\".)\n\n**2. Run #1.** Leave the default message (\"Hi! I'm Mei…\"). Run. Open **Final**: `memory_before` is empty; `memory_after` now lists Mei, her kopi stall, Tiong Bahru.\n\n**3. Run #2 — the payoff.** Change **Set Input → user_message** to something that needs memory, e.g. *\"What should today's special be?\"* — no name, no context. Run again. The Assistant greets Mei and suggests a kopi-stall special. It only knows that **because it read the file**.\n\n**4. Prove it's persistent.** Open `./shared/agent-memory.txt` on your host — it's plain text you can read. Restart n8n and run again; the memory is still there."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": { "main": [[{ "node": "Read Memory", "type": "main", "index": 0 }]] },
+    "Read Memory": { "main": [[{ "node": "Extract Memory", "type": "main", "index": 0 }]] },
+    "Extract Memory": { "main": [[{ "node": "Assistant", "type": "main", "index": 0 }]] },
+    "Assistant": { "main": [[{ "node": "Update Memory", "type": "main", "index": 0 }]] },
+    "Update Memory": { "main": [[{ "node": "Memory To File", "type": "main", "index": 0 }]] },
+    "Memory To File": { "main": [[{ "node": "Write Memory", "type": "main", "index": 0 }]] },
+    "Write Memory": { "main": [[{ "node": "Final", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": {
+      "ai_languageModel": [[
+        { "node": "Assistant", "type": "ai_languageModel", "index": 0 },
+        { "node": "Update Memory", "type": "ai_languageModel", "index": 0 }
+      ]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

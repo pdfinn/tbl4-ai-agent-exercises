@@ -1,0 +1,160 @@
+{
+  "name": "BonusB4 Calendar Date Finder — B Half-Built (find the 3 gaps)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 460],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 460],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "requested_date", "value": "2026-06-03", "type": "string" },
+            { "id": "i2", "name": "busy_dates", "value": "=[\"2026-06-03\", \"2026-06-05\", \"2026-06-08\", \"2026-06-11\"]", "type": "array" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "candidates",
+      "name": "Compute Candidates",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [640, 460],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "c1", "name": "requested_date", "value": "={{ $json.requested_date }}", "type": "string" },
+            { "id": "c2", "name": "busy_dates", "value": "={{ $json.busy_dates }}", "type": "array" },
+            { "id": "c3", "name": "cand_mon", "value": "={{ DateTime.fromISO($json.requested_date).plus({ days: (8 - DateTime.fromISO($json.requested_date).weekday) % 7 || 7 }).toFormat('yyyy-MM-dd') }}", "type": "string" },
+            { "id": "c4", "name": "cand_tue", "value": "", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "gate",
+      "name": "Requested Date Free?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [860, 460],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "g1", "leftValue": "={{ true }}", "rightValue": "", "operator": { "type": "boolean", "operation": "true", "singleValue": true } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "confirm",
+      "name": "Confirm Requested",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1100, 320],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "cf1", "name": "status", "value": "confirmed", "type": "string" },
+            { "id": "cf2", "name": "requested_date", "value": "={{ $json.requested_date }}", "type": "string" },
+            { "id": "cf3", "name": "chosen_date", "value": "={{ $json.requested_date }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "pick",
+      "name": "Pick Alternate",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1100, 620],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "pk1", "name": "status", "value": "={{ (!$json.busy_dates.includes($json.cand_mon) || !$json.busy_dates.includes($json.cand_tue)) ? 'alternate' : 'none' }}", "type": "string" },
+            { "id": "pk2", "name": "requested_date", "value": "={{ $json.requested_date }}", "type": "string" },
+            { "id": "pk3", "name": "chosen_date", "value": "={{ !$json.busy_dates.includes($json.cand_mon) ? $json.cand_mon : (!$json.busy_dates.includes($json.cand_tue) ? $json.cand_tue : 'none') }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "finalise",
+      "name": "Finalise",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1340, 460],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "fn1", "name": "status", "value": "={{ $json.status }}", "type": "string" },
+            { "id": "fn2", "name": "requested_date", "value": "={{ $json.requested_date }}", "type": "string" },
+            { "id": "fn3", "name": "chosen_date", "value": "={{ $json.chosen_date }}", "type": "string" },
+            { "id": "fn4", "name": "chosen_weekday", "value": "={{ $json.chosen_date === 'none' ? 'n/a' : DateTime.fromISO($json.chosen_date).toFormat('cccc') }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "compose",
+      "name": "Compose Reply",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1560, 460],
+      "parameters": { "promptType": "define", "text": "" }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1560, 660],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-gaps",
+      "name": "Gaps",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 40],
+      "parameters": {
+        "width": 1500,
+        "height": 300,
+        "color": 5,
+        "content": "## Half-Built — 3 gaps\n\nNine nodes, wired. The hard date expressions are done for you — study them. Three fields to fill:\n\n1. **Compute Candidates → `cand_tue`** is blank. `cand_mon` right above it is the template:\n   `={{ DateTime.fromISO($json.requested_date).plus({ days: (8 - DateTime.fromISO($json.requested_date).weekday) % 7 || 7 }).toFormat('yyyy-MM-dd') }}`\n   Monday is weekday **1** (so `1 + 7 = 8`). Tuesday is weekday **2**. Change the **8 to a 9** to land on the next Tuesday.\n2. **Requested Date Free? → condition** is hard-wired to `={{ true }}`, so every request looks free and nothing ever finds an alternate. Replace it with a real membership test: *is the requested date NOT in the busy list?*\n   `={{ !$json.busy_dates.includes($json.requested_date) }}`\n3. **Compose Reply → prompt** is blank. Write a friendly 2-3 sentence reply that branches on `{{ $json.status }}` (`confirmed` / `alternate` / `none`) and proposes `{{ $json.chosen_date }}` (a `{{ $json.chosen_weekday }}` afternoon) when offering an alternate.\n\n**Given as worked examples:** *Pick Alternate* (the Monday-then-Tuesday-else-none choice) and *Finalise* (the weekday name). No Code node anywhere."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": { "main": [[{ "node": "Compute Candidates", "type": "main", "index": 0 }]] },
+    "Compute Candidates": { "main": [[{ "node": "Requested Date Free?", "type": "main", "index": 0 }]] },
+    "Requested Date Free?": {
+      "main": [
+        [{ "node": "Confirm Requested", "type": "main", "index": 0 }],
+        [{ "node": "Pick Alternate", "type": "main", "index": 0 }]
+      ]
+    },
+    "Confirm Requested": { "main": [[{ "node": "Finalise", "type": "main", "index": 0 }]] },
+    "Pick Alternate": { "main": [[{ "node": "Finalise", "type": "main", "index": 0 }]] },
+    "Finalise": { "main": [[{ "node": "Compose Reply", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Compose Reply", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

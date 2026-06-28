@@ -1,0 +1,89 @@
+{
+  "name": "BonusB2 Review Classifier — A Blank (build the pipeline)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input (the reviews)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "i1",
+              "name": "reviews",
+              "value": "=[\n  { \"author\": \"Wei Ling\", \"rating\": 5, \"review\": \"Best chicken rice in the east, hands down. The chilli is fragrant and the queue moves fast. Auntie even remembered my order.\" },\n  { \"author\": \"Marcus T.\", \"rating\": 2, \"review\": \"Waited 35 minutes and the rice was cold by the time I got it. Staff seemed overwhelmed at lunch. Taste was fine but not worth that wait.\" },\n  { \"author\": \"Priya\", \"rating\": 1, \"review\": \"Found a long hair in my laksa and when I pointed it out they just shrugged. Absolutely not coming back.\" },\n  { \"author\": \"Daniel L.\", \"rating\": 4, \"review\": \"Solid char kway teow, good wok hei. A bit oily for my taste but that is kind of the point. Cash only, bring small notes.\" },\n  { \"author\": \"Hafiz\", \"rating\": 3, \"review\": \"It is okay lah. Nothing special, nothing bad. Prices have crept up though — used to be cheaper last year.\" },\n  { \"author\": \"Jocelyn\", \"rating\": 5, \"review\": \"Came for the kaya toast and stayed for the kopi. Cosy corner stall, friendly uncle, very nostalgic vibes.\" },\n  { \"author\": \"Ahmad R.\", \"rating\": 1, \"review\": \"Overpriced and bland. Seven dollars for a tiny portion of prata that was soggy in the middle. Disappointed.\" },\n  { \"author\": \"Chloe\", \"rating\": 4, \"review\": \"Lovely chendol, not too sweet, generous on the gula melaka. Seating is cramped but the dessert makes up for it.\" },\n  { \"author\": \"Ben\", \"rating\": 2, \"review\": \"Tables were dirty and nobody cleared them for ages. Food was average. Hygiene really let it down for me.\" },\n  { \"author\": \"Siti\", \"rating\": 5, \"review\": \"My go-to teh tarik every morning. Consistent, hot, and the uncle pulls it properly. Cannot complain at all.\" }\n]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 900,
+        "height": 200,
+        "color": 7,
+        "content": "## Bonus B2 — Classify reviews, then filter\n\nTen customer reviews sit in the Set node. Build a pipeline that tags each with a sentiment, keeps the negative ones, and tells the owner what to fix:\n\n```\nReviews → Split → Classify each (LLM, one word) → Tag → Keep negatives (Filter) → Collect → Summarise (LLM)\n```\n\nThis is Bonus B1's tabular spine with an **LLM classifier in the middle**, running once per review."
+      }
+    },
+    {
+      "id": "note-task",
+      "name": "Build it",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 290],
+      "parameters": {
+        "width": 560,
+        "height": 380,
+        "color": 4,
+        "content": "## Build this, left to right\n\n1. **Split Out** — field `reviews`. Run it: 10 items.\n2. **Basic LLM Chain ('Classify Sentiment')** + **Ollama Chat Model** — read `{{ $json.review }}`, output ONE word: `POSITIVE` / `NEGATIVE` / `NEUTRAL`.\n3. **Set ('Tag Review')** — keep the row AND the verdict. The LLM only returns `text`, so pull the original fields back with a cross-node reference:\n   - `author` = `={{ $('Split Reviews').item.json.author }}`\n   - `review` = `={{ $('Split Reviews').item.json.review }}`\n   - `sentiment` = `={{ $json.text.trim() }}`\n4. **Filter ('Keep Negative Only')** — keep rows where `sentiment` contains `NEGATIVE`.\n5. **Aggregate ('Collect Complaints')** — into `flagged`.\n6. **Basic LLM Chain ('Summarise Complaints')** — what are the recurring complaints; what to fix first."
+      }
+    },
+    {
+      "id": "note-scraping",
+      "name": "Why not scrape Google?",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [800, 290],
+      "parameters": {
+        "width": 520,
+        "height": 380,
+        "color": 3,
+        "content": "## \"Why aren't we scraping a Google reviews page?\"\n\nFair question. We don't, on purpose:\n\n1. **A plain fetch won't work.** Google reviews are drawn by JavaScript; an HTTP Request gets script, not text.\n2. **It breaks Google's Terms of Service.** The supported path is the paid **Places API** — not for an intro class.\n3. **The lesson is the same regardless of source.** Classify → filter → summarise doesn't care whether the rows came from a scrape, an API, or this fixture.\n\n**Practise real scraping honestly:** point an HTTP Request at a sandbox built for it — `books.toscrape.com` or `quotes.toscrape.com` — and use the **HTML Extract** node. Then run the rows through this same pipeline."
+      }
+    },
+    {
+      "id": "note-ext",
+      "name": "Rules & extension",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1360, 290],
+      "parameters": {
+        "width": 460,
+        "height": 380,
+        "color": 6,
+        "content": "## Rules\n\n- **No Code node.**\n- **Narrow classifier output.** One word, capitals, nothing else — that's what makes the Filter work.\n- **Run after every node.** Click *Classify Sentiment* and read each verdict before filtering.\n- **Model:** `llama3.1:8b`. **Credential:** `Ollama (local)`.\n\n## Extension — if you finish early\n\n- **Route instead of filter.** Swap the Filter for a Switch and send POSITIVE reviews to a 'thank-you draft' branch and NEGATIVE to a 'service-recovery draft' branch. (That's the Ex 04 routing pattern.)\n- **Filter on rating instead** (`rating <= 2`) and compare: does the star rating agree with the LLM's sentiment? Where do they disagree, and why?\n- **Summarise the positives too** and write a one-line marketing blurb."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input (the reviews)", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

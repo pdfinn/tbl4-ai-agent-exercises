@@ -1,0 +1,89 @@
+{
+  "name": "BonusB1 Tabular Data — A Blank (build the pipeline)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input (the table)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "i1",
+              "name": "rows",
+              "value": "=[\n  { \"dish\": \"Chicken Rice\", \"stall\": \"Tian Tian\", \"category\": \"Main\", \"price\": 5.5, \"units_sold\": 120 },\n  { \"dish\": \"Char Kway Teow\", \"stall\": \"Hill Street\", \"category\": \"Main\", \"price\": 6.0, \"units_sold\": 85 },\n  { \"dish\": \"Laksa\", \"stall\": \"328 Katong\", \"category\": \"Main\", \"price\": 7.0, \"units_sold\": 64 },\n  { \"dish\": \"Roti Prata\", \"stall\": \"Sin Ming\", \"category\": \"Main\", \"price\": 4.0, \"units_sold\": 98 },\n  { \"dish\": \"Kaya Toast Set\", \"stall\": \"Ya Kun\", \"category\": \"Main\", \"price\": 5.0, \"units_sold\": 41 },\n  { \"dish\": \"Teh Tarik\", \"stall\": \"Sin Ming\", \"category\": \"Drink\", \"price\": 1.8, \"units_sold\": 210 },\n  { \"dish\": \"Kopi O\", \"stall\": \"Ya Kun\", \"category\": \"Drink\", \"price\": 1.5, \"units_sold\": 175 },\n  { \"dish\": \"Sugarcane Juice\", \"stall\": \"Maxwell Corner\", \"category\": \"Drink\", \"price\": 2.5, \"units_sold\": 52 },\n  { \"dish\": \"Chendol\", \"stall\": \"328 Katong\", \"category\": \"Dessert\", \"price\": 3.5, \"units_sold\": 38 },\n  { \"dish\": \"Ice Kacang\", \"stall\": \"Maxwell Corner\", \"category\": \"Dessert\", \"price\": 3.0, \"units_sold\": 29 }\n]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 900,
+        "height": 200,
+        "color": 7,
+        "content": "## Bonus B1 — Working with tabular data\n\nA Set node holds a table of 10 dishes (run the workflow and click it — one item with a `rows` array). Build the pipeline that turns it into a sales readout:\n\n```\nThe table → Split into rows → Add a revenue column → Filter strong sellers → Sort by revenue → Collect rows → LLM readout\n```\n\nThe big idea: **one item = one row.** Most of n8n's data nodes operate on the list of items flowing through."
+      }
+    },
+    {
+      "id": "note-task",
+      "name": "Build it",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 290],
+      "parameters": {
+        "width": 560,
+        "height": 360,
+        "color": 4,
+        "content": "## Build this, left to right\n\n1. **Split Out** node — field to split out: `rows`. Run it; you should now see **10 items**, one per dish.\n2. **Set** node ('Add Revenue Column') — add a number field `revenue` = `={{ $json.price * $json.units_sold }}`. Carry `dish`, `stall`, `category`, `units_sold` through too.\n3. **Filter** node — keep rows where `units_sold` is at least 40. (Same condition editor as the IF node — but no branches; rows pass or drop.)\n4. **Sort** node — by `revenue`, descending.\n5. **Aggregate** node — Aggregate All Item Data into a field called `top_dishes`. This collapses the rows back into ONE item so the LLM sees them all.\n6. **Basic LLM Chain** ('Write Readout') + **Ollama Chat Model** — narrate the result in 2-3 sentences."
+      }
+    },
+    {
+      "id": "note-rules",
+      "name": "Rules",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [800, 290],
+      "parameters": {
+        "width": 520,
+        "height": 360,
+        "color": 3,
+        "content": "## Rules & hints\n\n- **No Code node.** Split Out / Set / Filter / Sort / Aggregate do everything.\n- **Do the maths in nodes, not the LLM.** Compute `revenue` and the total with expressions; the LLM only *narrates*. An LLM that adds up a column will sometimes be wrong.\n- **Run after every node.** Read the output panel. Watch the item count: 1 → 10 (Split) → fewer (Filter) → 1 again (Aggregate).\n- **Feeding the array to the LLM** (gap 6 hints):\n  - Total: `${{ $json.top_dishes.reduce((s, d) => s + d.revenue, 0) }}`\n  - List: `{{ $json.top_dishes.map(d => '- ' + d.dish + ': $' + d.revenue).join('\\n') }}`\n- **Model:** `llama3.1:8b`. **Credential:** `Ollama (local)`."
+      }
+    },
+    {
+      "id": "note-ext",
+      "name": "Extension",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1360, 290],
+      "parameters": {
+        "width": 460,
+        "height": 360,
+        "color": 6,
+        "content": "## Extension — if you finish early\n\n- **Group by category.** Add a second branch that uses Aggregate (or the Summarize node) to total revenue *per category*. Which category earns most?\n- **Swap in a real CSV.** Replace the Set node with an **HTTP Request** that fetches a published Google Sheet as CSV (`.../export?format=csv`), then an **Extract From File** node (operation: CSV). Same pipeline downstream. (This is the bridge to Bonus B3.)\n- **Sort ascending** and ask the LLM which dishes the owner should consider dropping.\n- **Filter on text.** Keep only `category` = `Main`. Notice the Filter uses the same editor as the IF node."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input (the table)", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

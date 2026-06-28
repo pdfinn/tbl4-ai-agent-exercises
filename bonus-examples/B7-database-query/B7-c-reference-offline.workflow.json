@@ -1,0 +1,133 @@
+{
+  "name": "BonusB7 Tender Pricing — C Reference (Offline)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [220, 440],
+      "parameters": {}
+    },
+    {
+      "id": "request",
+      "name": "Incoming Request + Catalogue",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 440],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "r1", "name": "request", "value": "={\n  \"product_code\": \"ABC1233-019\",\n  \"qty\": 100,\n  \"customer\": \"Maxwell Facilities Pte Ltd\"\n}", "type": "object" },
+            { "id": "c1", "name": "catalogue", "value": "=[\n  { \"product_code\": \"ABC1233-019\", \"description\": \"Industrial-grade PVC conduit, 25mm x 3m, grey\", \"uom\": \"length\", \"currency\": \"SGD\", \"list_unit_price\": 12.50, \"min_order_qty\": 10, \"lead_time_days\": 14, \"bulk_tiers\": [ {\"min_qty\":50,\"discount_pct\":8}, {\"min_qty\":100,\"discount_pct\":12}, {\"min_qty\":500,\"discount_pct\":18} ] },\n  { \"product_code\": \"ABC1233-021\", \"description\": \"Industrial-grade PVC conduit, 32mm x 3m, grey\", \"uom\": \"length\", \"currency\": \"SGD\", \"list_unit_price\": 15.80, \"min_order_qty\": 10, \"lead_time_days\": 14, \"bulk_tiers\": [ {\"min_qty\":50,\"discount_pct\":7}, {\"min_qty\":100,\"discount_pct\":11}, {\"min_qty\":500,\"discount_pct\":16} ] },\n  { \"product_code\": \"XLR8810-004\", \"description\": \"Cable gland brass M20, IP68, pack of 10\", \"uom\": \"pack\", \"currency\": \"SGD\", \"list_unit_price\": 9.20, \"min_order_qty\": 5, \"lead_time_days\": 7, \"bulk_tiers\": [ {\"min_qty\":25,\"discount_pct\":5}, {\"min_qty\":100,\"discount_pct\":10}, {\"min_qty\":250,\"discount_pct\":15} ] },\n  { \"product_code\": \"DLT7702-100\", \"description\": \"Junction box, 4-way, weatherproof, IP66\", \"uom\": \"each\", \"currency\": \"SGD\", \"list_unit_price\": 6.40, \"min_order_qty\": 20, \"lead_time_days\": 21, \"bulk_tiers\": [ {\"min_qty\":100,\"discount_pct\":9}, {\"min_qty\":500,\"discount_pct\":14}, {\"min_qty\":1000,\"discount_pct\":20} ] }\n]", "type": "array" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "price",
+      "name": "Look Up + Price (deterministic)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 440],
+      "parameters": {
+        "jsCode": "// THE MONEY IS COMPUTED HERE, NOT BY THE LLM.\n// Offline stand-in for a parameterised SQL query against the Customer Product DB.\n// In the live workflow this whole node is one Postgres node:\n//   SELECT ... FROM products WHERE product_code = $1   (the qty drives the tier).\n\nconst req = $input.first().json.request;\nconst catalogue = $input.first().json.catalogue;\n\nconst product = catalogue.find(\n  p => p.product_code.toLowerCase() === String(req.product_code).toLowerCase()\n);\n\nif (!product) {\n  return [{ json: { found: false, product_code: req.product_code, qty: req.qty, customer: req.customer } }];\n}\n\n// Bulk-tender pricing: highest tier whose min_qty the order meets.\nlet discount = 0;\nfor (const t of product.bulk_tiers) {\n  if (req.qty >= t.min_qty) discount = t.discount_pct;\n}\n\nconst listUnit = product.list_unit_price;\nconst netUnit = Number((listUnit * (1 - discount / 100)).toFixed(2));\nconst lineTotal = Number((netUnit * req.qty).toFixed(2));\nconst savings = Number(((listUnit - netUnit) * req.qty).toFixed(2));\nconst belowMoq = req.qty < product.min_order_qty;\n\nreturn [{ json: {\n  found: true,\n  customer: req.customer,\n  product_code: product.product_code,\n  description: product.description,\n  uom: product.uom,\n  currency: product.currency,\n  qty: req.qty,\n  min_order_qty: product.min_order_qty,\n  below_min_order_qty: belowMoq,\n  list_unit_price: listUnit,\n  applied_discount_pct: discount,\n  net_unit_price: netUnit,\n  line_total: lineTotal,\n  total_savings: savings,\n  lead_time_days: product.lead_time_days\n} }];"
+      }
+    },
+    {
+      "id": "found",
+      "name": "Product found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [880, 440],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "if1", "leftValue": "={{ $json.found }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "quote-llm",
+      "name": "Write the Quote",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1120, 340],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a sales-desk assistant drafting a bulk tender quote. Use ONLY the figures below — do NOT recalculate, round, or change any number. Your job is wording, not arithmetic.\n\nWrite a short, professional quote for the customer containing:\n- The product code and description.\n- Quantity and unit of measure.\n- List unit price, the bulk discount applied (as a percent), and the net unit price.\n- The line total and the total saving versus list.\n- Lead time.\nIf below_min_order_qty is true, add a line noting the order is below the minimum order quantity.\n\nEnd with: \"Figures are system-generated from the Customer Product DB and subject to final confirmation.\"\n\nQuote data:\n{{ JSON.stringify($json, null, 2) }}"
+      }
+    },
+    {
+      "id": "notfound",
+      "name": "Not Found Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 560],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "n1", "name": "result", "value": "=No catalogue entry found for product code {{ $json.product_code }}. Please check the code and try again.", "type": "string" },
+            { "id": "n2", "name": "status", "value": "not_found", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "quote-out",
+      "name": "Quote",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1340, 340],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "qo1", "name": "quote_text", "value": "={{ $json.text }}", "type": "string" },
+            { "id": "qo2", "name": "line_total", "value": "={{ $('Look Up + Price (deterministic)').item.json.line_total }}", "type": "number" },
+            { "id": "qo3", "name": "net_unit_price", "value": "={{ $('Look Up + Price (deterministic)').item.json.net_unit_price }}", "type": "number" },
+            { "id": "qo4", "name": "mode", "value": "offline (catalogue in a Set node; stands in for the Customer Product DB)", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1120, 540],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1180,
+        "height": 250,
+        "color": 7,
+        "content": "## Bonus B7 — Bulk tender pricing from a database (Offline variant)\n\n**Don't RAG a database — query it.** Pricing must be exact and auditable, so the numbers are computed deterministically and the LLM only writes the quote.\n\n```\nRequest (code + qty) → Look up + price (DB / Code) → found? → Write quote (LLM narrates) → Quote\n                                                        └ no → Not found\n```\n\n**Nodes compute, the LLM narrates.** The unit price, bulk discount tier, line total, and savings are all calculated in the **Code** node (the offline stand-in for a `SELECT ... WHERE product_code = $1` query). The LLM is told, in capitals, **not to do arithmetic** — only to phrase the quote. This is how you stop a model inventing a price.\n\n**Offline:** the catalogue lives in a Set node. Go live with `B7-c-reference.workflow.json`, which swaps it for a real **Postgres** node with a parameterised query. See the README for credentials, security, and data governance."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Incoming Request + Catalogue", "type": "main", "index": 0 }]] },
+    "Incoming Request + Catalogue": { "main": [[{ "node": "Look Up + Price (deterministic)", "type": "main", "index": 0 }]] },
+    "Look Up + Price (deterministic)": { "main": [[{ "node": "Product found?", "type": "main", "index": 0 }]] },
+    "Product found?": { "main": [
+      [{ "node": "Write the Quote", "type": "main", "index": 0 }],
+      [{ "node": "Not Found Message", "type": "main", "index": 0 }]
+    ] },
+    "Write the Quote": { "main": [[{ "node": "Quote", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Write the Quote", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

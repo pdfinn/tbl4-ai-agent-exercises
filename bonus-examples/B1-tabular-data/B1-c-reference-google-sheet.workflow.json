@@ -1,0 +1,165 @@
+{
+  "name": "BonusB1 Tabular Data — C Reference (Google Sheet, live)",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "sheet_id", "value": "PASTE-YOUR-SHARED-SHEET-ID-HERE", "type": "string" },
+            { "id": "i2", "name": "gid", "value": "0", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch Sheet (export as CSV)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [660, 500],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://docs.google.com/spreadsheets/d/{{ $('Set Input').item.json.sheet_id }}/export?format=csv&gid={{ $('Set Input').item.json.gid }}",
+        "options": {
+          "response": {
+            "response": { "responseFormat": "file", "outputPropertyName": "data" }
+          }
+        }
+      }
+    },
+    {
+      "id": "parse",
+      "name": "Parse CSV Into Rows",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [880, 500],
+      "parameters": { "operation": "csv", "binaryPropertyName": "data", "options": {} }
+    },
+    {
+      "id": "perrow",
+      "name": "Add Revenue Column",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1100, 500],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "p1", "name": "dish", "value": "={{ $json.dish }}", "type": "string" },
+            { "id": "p2", "name": "stall", "value": "={{ $json.stall }}", "type": "string" },
+            { "id": "p3", "name": "category", "value": "={{ $json.category }}", "type": "string" },
+            { "id": "p4", "name": "units_sold", "value": "={{ Number($json.units_sold) }}", "type": "number" },
+            { "id": "p5", "name": "revenue", "value": "={{ Number($json.price) * Number($json.units_sold) }}", "type": "number" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "filter",
+      "name": "Keep Strong Sellers",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [1320, 500],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            { "id": "f1", "leftValue": "={{ $json.units_sold }}", "rightValue": 40, "operator": { "type": "number", "operation": "gte" } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "sort",
+      "name": "Sort By Revenue",
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [1540, 500],
+      "parameters": {
+        "type": "simple",
+        "sortFieldsUI": { "sortField": [ { "fieldName": "revenue", "order": "descending" } ] },
+        "options": {}
+      }
+    },
+    {
+      "id": "aggregate",
+      "name": "Collect Rows",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1760, 500],
+      "parameters": { "aggregate": "aggregateAllItemData", "destinationFieldName": "top_dishes", "include": "allFields" }
+    },
+    {
+      "id": "summarise",
+      "name": "Write Readout",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [1980, 500],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a sales analyst. Below is a list of dishes that each sold at least 40 units, sorted by revenue (highest first). The total revenue figure is computed for you — do not recompute it.\n\nWrite a 2-3 sentence readout for the stall owners: name the top earner, note any pattern you see across categories, and state the total revenue. Plain prose, no bullet points, no preamble.\n\nTotal revenue across these dishes: ${{ $json.top_dishes.reduce((sum, d) => sum + d.revenue, 0) }}\n\nDishes:\n{{ $json.top_dishes.map(d => '- ' + d.dish + ' (' + d.stall + ', ' + d.category + '): $' + d.revenue + ' from ' + d.units_sold + ' sold').join('\\n') }}"
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [1980, 720],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Pattern",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1980,
+        "height": 200,
+        "color": 7,
+        "content": "## Bonus B1 — Tabular data from a Google Sheet (Reference, live)\n\nSame pipeline as the embedded version, but the table comes from a **shared Google Sheet** — exactly the shared-Doc trick from Bonus B3, with `format=csv`. No Google node, no OAuth, no API key.\n\n```\nSheet ID → Fetch Sheet (HTTP, export?format=csv, response=File) → Parse CSV Into Rows → Add Revenue Column → Keep Strong Sellers → Sort → Collect → Write Readout (LLM)\n          (binary file)                                          (Extract From File: rows become items)\n```\n\n**What changed vs. the embedded version:** the `Set Input (table)` + `Split Out` front end is replaced by `Fetch Sheet` (HTTP) + `Parse CSV Into Rows` (Extract From File). Extract From File already emits one item per row, so there's no Split Out here. Everything from Add Revenue Column onward is identical."
+      }
+    },
+    {
+      "id": "note-setup",
+      "name": "Setup — share your Sheet",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 760],
+      "parameters": {
+        "width": 1200,
+        "height": 320,
+        "color": 3,
+        "content": "## To run this live (one-time, ~2 min)\n\n1. Make a Google Sheet with the header row `dish, stall, category, price, units_sold` (paste in `sample-sales.csv` from this folder — File → Import, or just type the rows).\n2. **Share → General access → Anyone with the link → Viewer.**\n3. From the URL `docs.google.com/spreadsheets/d/`**`SHEET_ID`**`/edit#gid=`**`GID`** copy two things:\n   - the **SHEET_ID** → paste into *Set Input → `sheet_id`*\n   - the **gid** (the tab's number; the first tab is `0`) → *Set Input → `gid`*\n4. Run.\n\n**Why responseFormat = File?** CSV is not JSON, so we tell the HTTP node to hand back the raw bytes as a binary file (Options → Response → Response Format = **File**, property `data`). The **Parse CSV Into Rows** node (Extract From File, operation **CSV**, binary property `data`) then turns those bytes into one item per row, using the header row as field names.\n\n**Get HTML back / parse fails?** The Sheet isn't link-shared — Google returned a sign-in page, not CSV. Fix the sharing setting.\n\n**No Google account / offline?** Use the embedded `B1-c-reference.workflow.json` — same pipeline, table baked into a Set node."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] },
+    "Set Input": { "main": [[{ "node": "Fetch Sheet (export as CSV)", "type": "main", "index": 0 }]] },
+    "Fetch Sheet (export as CSV)": { "main": [[{ "node": "Parse CSV Into Rows", "type": "main", "index": 0 }]] },
+    "Parse CSV Into Rows": { "main": [[{ "node": "Add Revenue Column", "type": "main", "index": 0 }]] },
+    "Add Revenue Column": { "main": [[{ "node": "Keep Strong Sellers", "type": "main", "index": 0 }]] },
+    "Keep Strong Sellers": { "main": [[{ "node": "Sort By Revenue", "type": "main", "index": 0 }]] },
+    "Sort By Revenue": { "main": [[{ "node": "Collect Rows", "type": "main", "index": 0 }]] },
+    "Collect Rows": { "main": [[{ "node": "Write Readout", "type": "main", "index": 0 }]] },
+    "Ollama Chat Model": { "ai_languageModel": [[{ "node": "Write Readout", "type": "ai_languageModel", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}

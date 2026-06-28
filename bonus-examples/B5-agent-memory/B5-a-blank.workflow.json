@@ -1,0 +1,79 @@
+{
+  "name": "BonusB5 Agent With Memory — A Blank",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Run Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 520],
+      "parameters": {}
+    },
+    {
+      "id": "input",
+      "name": "Set Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 520],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "i1", "name": "user_message", "value": "Hi! I'm Mei. I run a kopi stall in Tiong Bahru and I'd love help writing daily specials.", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [640, 760],
+      "parameters": { "model": "llama3.1:8b" }
+    },
+    {
+      "id": "note-pattern",
+      "name": "Build this",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 60],
+      "parameters": {
+        "width": 1500,
+        "height": 230,
+        "color": 7,
+        "content": "## Bonus B5 — An agent that remembers you (Blank Starter)\n\nBuild an **AI Agent** that remembers the user between runs by keeping notes in a **flat text file**. You're given a Manual Trigger, a Set node with the user's message, and an Ollama Chat Model. Build the rest.\n\n```\nMessage → Read Memory → Extract Memory → ASSISTANT (Agent) → Update Memory → Memory To File → Write Memory → Final\n          (read file)    (binary→text)    answers using it    (LLM rewrites    (text→binary)   (overwrite)\n                                                                 the notes)\n```\n\n**The big idea:** memory is just text you paste into the prompt; persistence is just a file you read before and write after."
+      }
+    },
+    {
+      "id": "note-build",
+      "name": "Steps",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 320],
+      "parameters": {
+        "width": 900,
+        "height": 470,
+        "color": 4,
+        "content": "## Build it\n\n**1. Read Memory** — *Read/Write Files from Disk*, operation **Read**. File path `/data/shared/agent-memory.txt`. Set **Continue On Error** (Settings tab → On Error → *Continue (regular output)*) so the very first run, when the file doesn't exist yet, doesn't stop everything.\n\n**2. Extract Memory** — *Extract From File*, operation **Move/Extract Text** (`text`), input binary field `data`. This turns the file's binary into a string in `data`. Also Continue On Error.\n\n**3. Assistant** — *AI Agent* node + the **Ollama Chat Model** (drag from the model node into the Agent's *Chat Model* connector). Prompt source = **Define**, text = `{{ $('Set Input').item.json.user_message }}`. In **Options → System Message**, write a short assistant persona AND paste the remembered facts:\n```\n{{ $('Extract Memory').item.json.data || '(nothing yet)' }}\n```\n\n**4. Update Memory** — *Basic LLM Chain* + the same Ollama model. Ask it to output the COMPLETE updated memory: durable facts only (name, business, location, goals), one per line, merging the new exchange with the old. Feed it the old memory, the user message, and `{{ $('Assistant').item.json.output }}`.\n\n**5. Memory To File** — *Convert to File*, operation **Convert to Text File**, source field `text` (the Update Memory output).\n\n**6. Write Memory** — *Read/Write Files from Disk*, operation **Write**, file name `/data/shared/agent-memory.txt` (the SAME path as Read). Binary field `data`.\n\n**7. Final** — *Set* node showing `reply`, `memory_before`, `memory_after`."
+      }
+    },
+    {
+      "id": "note-rules",
+      "name": "Rules & test",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1140, 320],
+      "parameters": {
+        "width": 560,
+        "height": 470,
+        "color": 3,
+        "content": "## Rules\n\n- **Read and Write must use the exact same path.** If they disagree, memory never comes back.\n- **The agent only knows what you paste into its System Message.** No paste = no memory.\n- **Update Memory rewrites the whole file each run.** Tell it to keep what's still true and add what's new — don't just append, or it grows forever.\n- **Durable facts only.** Names, business, goals — not \"hello\" or today's question.\n\n## Test it\n\n1. **Run #1** with the default \"Hi! I'm Mei…\" message. `memory_after` should capture Mei + kopi stall + Tiong Bahru.\n2. **Run #2:** change the message to *\"What should today's special be?\"* — no name. If memory works, the Assistant still greets Mei.\n3. Open `./shared/agent-memory.txt` on your host — it's plain text. Restart n8n; it persists.\n\n## Extension\n- Add a `user_id` field and use it in the file name (`agent-memory-{{id}}.txt`) so each user gets their own notebook.\n- Swap the flat file for n8n's built-in **Simple Memory** node and compare."
+      }
+    }
+  ],
+  "connections": {
+    "Run Workflow": { "main": [[{ "node": "Set Input", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Singapore" }
+}
